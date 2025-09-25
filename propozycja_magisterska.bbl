@@ -1,0 +1,287 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{mitbih1997}{dataset}{}
+      \name{author}{1}{}{%
+        {{hash=37260b685eb0a36689a3f58322f5adab}{%
+           family={{PhysioNet}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {PhysioNet}%
+      }
+      \strng{namehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{fullhash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{bibnamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authorbibnamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authornamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authorfullhash}{37260b685eb0a36689a3f58322f5adab}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{[DATASET]}
+      \field{title}{{MIT-BIH Arrhythmia Database}}
+      \field{year}{1997}
+      \verb{doi}
+      \verb 10.13026/C2F305
+      \endverb
+      \verb{urlraw}
+      \verb https://www.physionet.org/content/mitdb/1.0.0/
+      \endverb
+      \verb{url}
+      \verb https://www.physionet.org/content/mitdb/1.0.0/
+      \endverb
+    \endentry
+    \entry{ptbxl2020}{dataset}{}
+      \name{author}{1}{}{%
+        {{hash=37260b685eb0a36689a3f58322f5adab}{%
+           family={{PhysioNet}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{fullhash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{bibnamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authorbibnamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authornamehash}{37260b685eb0a36689a3f58322f5adab}
+      \strng{authorfullhash}{37260b685eb0a36689a3f58322f5adab}
+      \field{extraname}{2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Scientific Data}
+      \field{note}{[DATASET]}
+      \field{title}{{PTB-XL Database}}
+      \field{year}{2020}
+      \verb{doi}
+      \verb 10.1038/s41597-020-0495-6
+      \endverb
+      \verb{urlraw}
+      \verb https://physionet.org/content/ptb-xl/1.0.1/
+      \endverb
+      \verb{url}
+      \verb https://physionet.org/content/ptb-xl/1.0.1/
+      \endverb
+    \endentry
+    \entry{low2020}{inproceedings}{}
+      \name{author}{1}{}{%
+        {{hash=472abfae8142fdb6f39d081303e8af85}{%
+           family={{IEEE}},
+           familyi={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{472abfae8142fdb6f39d081303e8af85}
+      \strng{fullhash}{472abfae8142fdb6f39d081303e8af85}
+      \strng{bibnamehash}{472abfae8142fdb6f39d081303e8af85}
+      \strng{authorbibnamehash}{472abfae8142fdb6f39d081303e8af85}
+      \strng{authornamehash}{472abfae8142fdb6f39d081303e8af85}
+      \strng{authorfullhash}{472abfae8142fdb6f39d081303e8af85}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{IEEE Conference Publication}
+      \field{title}{Low Cost, Portable ECG Monitoring and Alarming System Based on Deep Learning}
+      \field{year}{2020}
+      \true{nocite}
+      \verb{doi}
+      \verb 10.1109/ICIEA48937.2020.9231005
+      \endverb
+      \verb{urlraw}
+      \verb https://ieeexplore.ieee.org/document/9231005/
+      \endverb
+      \verb{url}
+      \verb https://ieeexplore.ieee.org/document/9231005/
+      \endverb
+    \endentry
+    \entry{reliable2024}{article}{}
+      \name{author}{1}{}{%
+        {{hash=0734f11bb89fc5a69cc111823981ee4b}{%
+           family={{PMC}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{0734f11bb89fc5a69cc111823981ee4b}
+      \strng{fullhash}{0734f11bb89fc5a69cc111823981ee4b}
+      \strng{bibnamehash}{0734f11bb89fc5a69cc111823981ee4b}
+      \strng{authorbibnamehash}{0734f11bb89fc5a69cc111823981ee4b}
+      \strng{authornamehash}{0734f11bb89fc5a69cc111823981ee4b}
+      \strng{authorfullhash}{0734f11bb89fc5a69cc111823981ee4b}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Sensors}
+      \field{number}{7}
+      \field{title}{Reliable ECG Anomaly Detection on Edge Devices for Internet of Medical Things Applications}
+      \field{volume}{24}
+      \field{year}{2024}
+      \true{nocite}
+      \field{pages}{2125}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.3390/s24072125
+      \endverb
+      \verb{urlraw}
+      \verb https://pmc.ncbi.nlm.nih.gov/articles/PMC12031393/
+      \endverb
+      \verb{url}
+      \verb https://pmc.ncbi.nlm.nih.gov/articles/PMC12031393/
+      \endverb
+    \endentry
+    \entry{ad8232benchmark2023}{article}{}
+      \name{author}{1}{}{%
+        {{hash=9bd49f4c55bb22330226b8f028fb16c1}{%
+           family={{MDPI}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{fullhash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{bibnamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authorbibnamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authornamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authorfullhash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \field{extraname}{1}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Electronics}
+      \field{number}{4}
+      \field{title}{AD8232 to Biopotentials Sensors: Open Source Project and Benchmark}
+      \field{volume}{12}
+      \field{year}{2023}
+      \true{nocite}
+      \field{pages}{833}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.3390/electronics12040833
+      \endverb
+      \verb{urlraw}
+      \verb https://www.mdpi.com/2079-9292/12/4/833
+      \endverb
+      \verb{url}
+      \verb https://www.mdpi.com/2079-9292/12/4/833
+      \endverb
+    \endentry
+    \entry{deeplearning2023}{article}{}
+      \name{author}{1}{}{%
+        {{hash=9bd49f4c55bb22330226b8f028fb16c1}{%
+           family={{MDPI}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{fullhash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{bibnamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authorbibnamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authornamehash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \strng{authorfullhash}{9bd49f4c55bb22330226b8f028fb16c1}
+      \field{extraname}{2}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Applied Sciences}
+      \field{number}{8}
+      \field{title}{Deep Learning-Based ECG Arrhythmia Classification: A Systematic Review}
+      \field{volume}{13}
+      \field{year}{2023}
+      \true{nocite}
+      \field{pages}{4964}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.3390/app13084964
+      \endverb
+      \verb{urlraw}
+      \verb https://www.mdpi.com/2076-3417/13/8/4964
+      \endverb
+      \verb{url}
+      \verb https://www.mdpi.com/2076-3417/13/8/4964
+      \endverb
+    \endentry
+    \entry{catnet2024}{article}{}
+      \name{author}{1}{}{%
+        {{hash=ed15e0ed8bc63d1935fbdf9b7d303228}{%
+           family={{ScienceDirect}},
+           familyi={S\bibinitperiod}}}%
+      }
+      \strng{namehash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \strng{fullhash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \strng{bibnamehash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \strng{authorbibnamehash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \strng{authornamehash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \strng{authorfullhash}{ed15e0ed8bc63d1935fbdf9b7d303228}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Biomedical Signal Processing and Control}
+      \field{title}{CAT-Net: Convolution, attention, and transformer network for single-lead ECG arrhythmia classification}
+      \field{year}{2024}
+      \true{nocite}
+      \verb{doi}
+      \verb 10.1016/j.bspc.2024.106261
+      \endverb
+      \verb{urlraw}
+      \verb https://www.sciencedirect.com/science/article/pii/S1746809424002696
+      \endverb
+      \verb{url}
+      \verb https://www.sciencedirect.com/science/article/pii/S1746809424002696
+      \endverb
+    \endentry
+    \entry{ecgsignal2024}{article}{}
+      \name{author}{1}{}{%
+        {{hash=48caee294091d0d36427460deac26c62}{%
+           family={{PAR}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{48caee294091d0d36427460deac26c62}
+      \strng{fullhash}{48caee294091d0d36427460deac26c62}
+      \strng{bibnamehash}{48caee294091d0d36427460deac26c62}
+      \strng{authorbibnamehash}{48caee294091d0d36427460deac26c62}
+      \strng{authornamehash}{48caee294091d0d36427460deac26c62}
+      \strng{authorfullhash}{48caee294091d0d36427460deac26c62}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Pomiary Automatyka Robotyka}
+      \field{number}{2}
+      \field{title}{The ECG Signal Monitoring System Using ML and LoRa}
+      \field{volume}{28}
+      \field{year}{2024}
+      \true{nocite}
+      \field{pages}{5\bibrangedash 12}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.14313/PAR_252/5
+      \endverb
+      \verb{urlraw}
+      \verb http://yadda.icm.edu.pl/baztech/element/bwmeta1.element.baztech-9632528f-2215-48d5-964a-0fffb41ad392
+      \endverb
+      \verb{url}
+      \verb http://yadda.icm.edu.pl/baztech/element/bwmeta1.element.baztech-9632528f-2215-48d5-964a-0fffb41ad392
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

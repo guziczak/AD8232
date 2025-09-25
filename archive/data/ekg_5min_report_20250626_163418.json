@@ -1,0 +1,58 @@
+{
+  "basic_stats": {
+    "duration_s": 299.99199,
+    "samples": 74999,
+    "sample_rate_target": 250,
+    "sample_rate_actual": 251.63563160543532,
+    "sample_rate_std": 18.62990280736729,
+    "voltage_mean": 1.6463438010103506,
+    "voltage_std": 0.10994868922914171,
+    "voltage_range": [
+      1.286665140764477,
+      3.198484779125658
+    ],
+    "adc_saturation_high": "0",
+    "adc_saturation_low": "0",
+    "missing_samples": -1
+  },
+  "signal_quality": {
+    "dc_offset": 0.4988920609122275,
+    "baseline_wander_std": NaN,
+    "hf_noise_std": 19.772116212124804,
+    "power_50hz_db": 49.87508946361517,
+    "motion_artifacts": "750",
+    "snr_estimate": 110.43233770788477
+  },
+  "heart_rate": {
+    "detected_beats": 353,
+    "mean_hr": 71.37827709142645,
+    "std_hr": 6.001348499366948,
+    "min_hr": 63.705223191249445,
+    "max_hr": 145.1744028492896,
+    "rmssd": 38.976934706891704,
+    "sdnn": 47.81574624514753,
+    "pnn50": 3.125,
+    "missed_beats_estimate": 3
+  },
+  "frequency_domain": {
+    "dominant_frequencies": [
+      0.24573792148968293,
+      0.43004136260694514,
+      1.1672551270759939,
+      1.5358620093105184,
+      1.9044688915450427
+    ],
+    "total_power": 76295992.95928095,
+    "power_0_5hz": 7296357.953809924,
+    "power_5_15hz": 13835103.34865198,
+    "power_15_40hz": 15174384.574474063,
+    "power_above_40hz": 1963399.0995368042
+  },
+  "recommendations": [
+    {
+      "issue": "Strong 50Hz interference",
+      "impact": "high",
+      "fix": "Add better filtering, improve grounding"
+    }
+  ]
+}

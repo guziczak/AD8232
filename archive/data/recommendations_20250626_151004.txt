@@ -1,0 +1,34 @@
+EKG SYSTEM IMPROVEMENT RECOMMENDATIONS
+==================================================
+
+1. High sample rate jitter (Severity: medium)
+   Target: firmware
+   Suggestion: Use DMA for ADC reading, check for blocking operations
+
+2. High noise level (Severity: high)
+   Target: hardware
+   Suggestions:
+     - Add better power supply filtering
+     - Improve PCB layout and grounding
+     - Add shielding to analog section
+
+3. Strong 50Hz interference (Severity: high)
+   Target: both
+   Suggestions:
+     - Hardware: Add notch filter or improve shielding
+     - Software: Implement adaptive notch filter
+
+4. Baseline wander (Severity: medium)
+   Target: both
+   Suggestions:
+     - Hardware: Check electrode contact and cables
+     - Software: Add high-pass filter (0.5Hz cutoff)
+
+5. ADC saturation detected (Severity: high)
+   Target: hardware
+   Suggestion: Reduce gain or adjust input range
+
+6. Low signal-to-noise ratio (Severity: high)
+   Target: hardware
+   Suggestion: Review entire analog signal path
+

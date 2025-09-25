@@ -1,0 +1,23 @@
+5-MINUTE EKG RECORDING - ANALYSIS REPORT
+============================================================
+Date: 2025-06-26 16:34:18
+Duration: 300.0 seconds
+Samples: 74,999
+
+SIGNAL QUALITY ISSUES:
+------------------------------
+
+1. Strong 50Hz interference
+   Impact: HIGH
+   Solution: Add better filtering, improve grounding
+
+
+DETAILED METRICS:
+------------------------------
+Sample Rate: 251.6 Hz (target: 250 Hz)
+DC Offset: 0.499
+SNR Estimate: 110.4
+50Hz Interference: 49.9 dB
+
+Heart Rate: 71.4 ± 6.0 BPM
+Heart Rate Variability (RMSSD): 39.0 ms

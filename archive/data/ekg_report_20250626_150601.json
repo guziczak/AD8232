@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-06-26T15:06:01.319467",
+  "statistics": {
+    "samples": 23715,
+    "duration": 119.983984,
+    "sample_rate": {
+      "target": 250,
+      "actual": 250.12506253126566,
+      "std": 58.64280551443616,
+      "min": 9.61076405574243,
+      "max": 4385.964912280701
+    },
+    "voltage": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "range": 0.0
+    },
+    "adc": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": "0",
+      "max": "0",
+      "saturation_count": "23715"
+    }
+  },
+  "quality_metrics": {
+    "dc_offset": 0.0,
+    "noise_rms": 0.0,
+    "power_50hz": 0.0,
+    "baseline_variance": 0.0,
+    "snr_estimate": 0,
+    "hrv": {
+      "detected_beats": 0
+    }
+  },
+  "recommendations": [
+    {
+      "issue": "High sample rate jitter",
+      "severity": "medium",
+      "target": "firmware",
+      "suggestion": "Use DMA for ADC reading, check for blocking operations"
+    },
+    {
+      "issue": "DC offset not centered",
+      "severity": "medium",
+      "target": "hardware",
+      "suggestion": "Adjust bias voltage in analog frontend"
+    },
+    {
+      "issue": "ADC saturation detected",
+      "severity": "high",
+      "target": "hardware",
+      "suggestion": "Reduce gain or adjust input range"
+    },
+    {
+      "issue": "Low signal-to-noise ratio",
+      "severity": "high",
+      "target": "hardware",
+      "suggestion": "Review entire analog signal path"
+    }
+  ]
+}

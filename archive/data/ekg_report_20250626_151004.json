@@ -1,0 +1,89 @@
+{
+  "timestamp": "2025-06-26T15:10:04.380660",
+  "statistics": {
+    "samples": 20408,
+    "duration": 119.98801,
+    "sample_rate": {
+      "target": 250,
+      "actual": 250.31289111389233,
+      "std": 59.698613624801936,
+      "min": 2.7766594010745673,
+      "max": 1848.4288354898335
+    },
+    "voltage": {
+      "mean": 1.781104484986029,
+      "std": 0.31291644733810514,
+      "min": 1.0916411078049897,
+      "max": 3.3,
+      "range": 2.20835889219501
+    },
+    "adc": {
+      "mean": 35371.11588592709,
+      "std": 6214.236174637188,
+      "min": "21679",
+      "max": "65535",
+      "saturation_count": "380"
+    }
+  },
+  "quality_metrics": {
+    "dc_offset": 0.539728631813948,
+    "noise_rms": 1800.172580631764,
+    "power_50hz": 30137.680765101963,
+    "baseline_variance": 967.4992679205255,
+    "snr_estimate": 2.140357210174192,
+    "hrv": {
+      "mean_hr": 96.63607739288027,
+      "std_hr": 31.288964920510963,
+      "rmssd": 309.7239813321343,
+      "detected_beats": 94
+    }
+  },
+  "recommendations": [
+    {
+      "issue": "High sample rate jitter",
+      "severity": "medium",
+      "target": "firmware",
+      "suggestion": "Use DMA for ADC reading, check for blocking operations"
+    },
+    {
+      "issue": "High noise level",
+      "severity": "high",
+      "target": "hardware",
+      "suggestions": [
+        "Add better power supply filtering",
+        "Improve PCB layout and grounding",
+        "Add shielding to analog section"
+      ]
+    },
+    {
+      "issue": "Strong 50Hz interference",
+      "severity": "high",
+      "target": "both",
+      "suggestions": [
+        "Hardware: Add notch filter or improve shielding",
+        "Software: Implement adaptive notch filter"
+      ]
+    },
+    {
+      "issue": "Baseline wander",
+      "severity": "medium",
+      "target": "both",
+      "suggestions": [
+        "Hardware: Check electrode contact and cables",
+        "Software: Add high-pass filter (0.5Hz cutoff)"
+      ]
+    },
+    {
+      "issue": "ADC saturation detected",
+      "severity": "high",
+      "target": "hardware",
+      "suggestion": "Reduce gain or adjust input range"
+    },
+    {
+      "issue": "Low signal-to-noise ratio",
+      "severity": "high",
+      "target": "hardware",
+      "suggestion": "Review entire analog signal path"
+    }
+  ]
+}

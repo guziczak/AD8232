@@ -1,0 +1,222 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[style=numeric-comp,sorting=none,backend=biber]{biblatex}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\geometry{margin=2.5cm}
+\addbibresource{bibliografia.bib}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{Propozycja tematu pracy magisterskiej}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\LARGE\bfseries Propozycja tematu pracy magisterskiej\\[0.5cm]}
+\vspace{2cm}
+
+{\Large\bfseries Implementacja i optymalizacja algorytmów uczenia głębokiego do klasyfikacji arytmii w niskokosztowych systemach monitoringu EKG z wykorzystaniem technologii Edge AI\\[1cm]}
+
+\vspace{3cm}
+
+\begin{flushleft}
+\large
+\textbf{Student:} Łukasz Guziczak\\
+\textbf{Nr albumu:} 105093\\
+\textbf{Kierunek:} Informatyka\\
+\textbf{Specjalność:} Sztuczna inteligencja i uczenie maszynowe\\[1cm]
+\textbf{Promotor:} dr inż. Piotr Ciskowski\\
+\end{flushleft}
+
+\vfill
+{\large Uniwersytet WSB Merito Wrocław\\[0.5cm]
+Data: \today}
+
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Temat pracy}
+
+\textbf{PL:} Implementacja i optymalizacja algorytmów uczenia głębokiego do klasyfikacji arytmii w niskokosztowych systemach monitoringu EKG z wykorzystaniem technologii Edge AI
+
+\textbf{EN:} Implementation and Optimization of Deep Learning Algorithms for Arrhythmia Classification in Low-Cost ECG Monitoring Systems Using Edge AI Technology
+
+\section{Uzasadnienie wyboru tematu i cel pracy}
+
+\subsection{Motywacja}
+
+Choroby układu krążenia stanowią główną przyczynę zgonów globalnie. Dostęp do profesjonalnej diagnostyki EKG jest ograniczony ze względu na:
+\begin{itemize}
+    \item Wysokie koszty profesjonalnych urządzeń (>10 000 PLN)
+    \item Brak wykwalifikowanego personelu w regionach oddalonych
+    \item Konieczność fizycznej wizyty w placówce medycznej
+\end{itemize}
+
+Projekt proponuje rozwiązanie wykorzystujące:
+\begin{itemize}
+    \item Tani moduł AD8232 (<20 PLN) + mikrokontroler RP2040 (<10 PLN)
+    \item Algorytmy deep learning do automatycznej analizy
+    \item Przetwarzanie Edge AI eliminujące potrzebę internetu
+\end{itemize}
+
+Autor opracował działający prototyp systemu z oprogramowaniem dostępnym w repozytorium open-source: \textbf{\url{https://github.com/guziczak/ad8232}}. Repozytorium zawiera:
+\begin{itemize}
+    \item \texttt{main\_scaled.py} -- firmware MicroPython wgrywany na mikrokontroler RP2040
+    \item \texttt{visualizer\_scaled.py} -- aplikacja PC do wizualizacji sygnału EKG w czasie rzeczywistym
+\end{itemize}
+
+\subsection{Cel główny}
+
+Opracowanie kompletnego systemu monitoringu EKG wykorzystującego uczenie głębokie do automatycznej klasyfikacji arytmii, działającego w czasie rzeczywistym na urządzeniach embedded o ograniczonych zasobach.
+
+\subsection{Cele szczegółowe}
+
+\begin{enumerate}
+    \item \textbf{Walidacja sprzętowa:} Zbadanie możliwości diagnostycznych układu AD8232 w porównaniu z profesjonalnym EKG
+    \item \textbf{Rozwój modeli AI:} Implementacja i porównanie architektur CNN, LSTM, CAT-Net dla klasyfikacji arytmii
+    \item \textbf{Optymalizacja dla Edge:} Kompresja modeli (kwantyzacja, pruning) do rozmiaru <500KB
+    \item \textbf{Walidacja kliniczna:} Osiągnięcie dokładności >90\% na datasetach MIT-BIH \cite{mitbih1997} i PTB-XL \cite{ptbxl2020}
+\end{enumerate}
+
+\section{Hipotezy badawcze}
+
+\begin{enumerate}
+    \item[\textbf{H1:}] Sygnał z układu AD8232 po preprocessingu umożliwia detekcję podstawowych arytmii (AF, PVC, bradykardia, tachykardia) z czułością >85\%
+    
+    \item[\textbf{H2:}] Architektury CNN dedykowane sygnałom 1D osiągają lepszy stosunek dokładność/złożoność niż LSTM dla single-lead EKG
+    
+    \item[\textbf{H3:}] Kwantyzacja INT8 i pruning redukują rozmiar modelu o >75\% przy spadku dokładności <5\%
+    
+    \item[\textbf{H4:}] Edge AI zapewnia latencję <100ms, umożliwiając real-time monitoring bez połączenia z chmurą
+\end{enumerate}
+
+\section{Metodologia badawcza}
+
+\subsection{Architektury modeli}
+
+\begin{enumerate}
+    \item \textbf{CNN 1D} - Adaptacja MobileNet dla sygnałów czasowych
+    \item \textbf{LSTM z uwagą} - Analiza długoterminowych zależności w EKG
+    \item \textbf{CAT-Net} - Hybrydowa architektura Convolution-Attention-Transformer
+    \item \textbf{Ensemble} - Voting classifier łączący powyższe
+\end{enumerate}
+
+\subsection{Techniki optymalizacji}
+
+\begin{itemize}
+    \item \textbf{Kwantyzacja:} Post-training quantization FP32→INT8
+    \item \textbf{Pruning:} Magnitude-based i structured pruning
+    \item \textbf{Knowledge Distillation:} Transfer z dużego modelu-nauczyciela
+    \item \textbf{NAS:} Automatyczne wyszukiwanie optymalnej architektury
+\end{itemize}
+
+\subsection{Datasety}
+
+\begin{itemize}
+    \item \textbf{MIT-BIH Arrhythmia Database} \cite{mitbih1997} - 48 nagrań 30-minutowych, gold standard dla arytmii
+    \item \textbf{PTB-XL Database} \cite{ptbxl2020} - 21,837 nagrań 12-odprowadzeniowych, największy publiczny dataset
+    \item \textbf{Własne dane} - Zebrane układem AD8232 do fine-tuningu
+\end{itemize}
+
+\subsection{Metryki ewaluacji}
+
+\begin{itemize}
+    \item \textbf{Skuteczność:} Accuracy, Sensitivity, Specificity, F1-score per klasa
+    \item \textbf{Wydajność:} Latencja (ms), FPS, zużycie RAM/Flash
+    \item \textbf{Energia:} Pobór prądu (mA), czas pracy na baterii
+\end{itemize}
+
+\section{Plan realizacji}
+
+\subsection{Harmonogram}
+
+\begin{enumerate}
+    \item \textbf{Październik-Listopad 2025:} Przegląd literatury, analiza state-of-the-art
+    \item \textbf{Grudzień 2025:} Walidacja sprzętu AD8232, porównanie z profesjonalnym EKG
+    \item \textbf{Styczeń-Marzec 2026:} Rozwój i trening modeli ML na datasetach
+    \item \textbf{Kwiecień-Maj 2026:} Kompresja modeli i deployment na RP2040
+    \item \textbf{Czerwiec 2026:} Testy systemu, walidacja cross-dataset
+\end{enumerate}
+
+\subsection{Kamienie milowe}
+
+\begin{itemize}
+    \item[\textbf{M1:}] Działający prototyp hardware z podstawowym preprocessingiem
+    \item[\textbf{M2:}] Wytrenowane modele z accuracy >90\% na MIT-BIH
+    \item[\textbf{M3:}] Model skompresowany do <500KB działający na RP2040
+    \item[\textbf{M4:}] Kompletny system z dokumentacją open-source
+\end{itemize}
+
+\section{Aktualny stan projektu}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{image.png}
+    \caption{Obecny prototyp systemu EKG z modułem AD8232 i wizualizacją real-time}
+    \label{fig:prototype}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{hardware_photo.jpeg}
+    \caption{Prototyp hardware'u: mikrokontroler RP2040-Zero z modułem AD8232 oraz elektrodami EKG}
+    \label{fig:hardware}
+\end{figure}
+
+Dotychczas zrealizowano:
+\begin{itemize}
+    \item Działający hardware (RP2040 + AD8232)
+    \item Firmware w MicroPython (250 Hz sampling)
+    \item PC software do wizualizacji real-time
+\end{itemize}
+
+Zidentyfikowane wyzwania:
+\begin{itemize}
+    \item Sygnał wymaga skalowania (obecnie 907x za duży)
+    \item Konieczność implementacji zaawansowanego filtrowania
+    \item Duże szumy przy ruchu pacjenta (artefakty ruchowe)
+    \item Błędna detekcja HR przez visualizer (~150 BPM zamiast rzeczywistych) z powodu problemu skalowania
+    \item Optymalizacja dla niskich zasobów RP2040 (264KB RAM)
+\end{itemize}
+
+\section{Oczekiwane rezultaty}
+
+\subsection{Wkład naukowy}
+\begin{itemize}
+    \item Pierwsze systematyczne badanie AD8232 w kontekście deep learning
+    \item Analiza trade-off dokładność vs zasoby dla embedded AI w medycynie
+    \item Porównanie skuteczności architektur DL dla single-lead EKG
+\end{itemize}
+
+\subsection{Wkład praktyczny}
+\begin{itemize}
+    \item Open-source framework dla tanich systemów EKG (<50 PLN)
+    \item Zwalidowany pipeline od surowych danych do klasyfikacji
+    \item Dokumentacja umożliwiająca replikację projektu
+\end{itemize}
+
+
+\nocite{*}
+\printbibliography[heading=bibintoc,title={Bibliografia podstawowa}]
+
+\end{document}

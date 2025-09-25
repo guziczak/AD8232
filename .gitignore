@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.env
+venv/
+env/
+ENV/
+
+# Data files
+data/*.csv
+data/*.txt
+*.csv
+!requirements.txt
+
+# Machine Learning
+*.h5
+*.pkl
+*.pt
+*.pth
+*.model
+*.weights
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Documentation build
+docs/_build/
+docs/_static/
+docs/_templates/

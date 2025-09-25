@@ -1,0 +1,19 @@
+EKG SYSTEM IMPROVEMENT RECOMMENDATIONS
+==================================================
+
+1. High sample rate jitter (Severity: medium)
+   Target: firmware
+   Suggestion: Use DMA for ADC reading, check for blocking operations
+
+2. DC offset not centered (Severity: medium)
+   Target: hardware
+   Suggestion: Adjust bias voltage in analog frontend
+
+3. ADC saturation detected (Severity: high)
+   Target: hardware
+   Suggestion: Reduce gain or adjust input range
+
+4. Low signal-to-noise ratio (Severity: high)
+   Target: hardware
+   Suggestion: Review entire analog signal path
+

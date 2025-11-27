@@ -1,0 +1,3223 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECG Edge AI - Architecture & Implementation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --code-bg: #0d1117;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #334155;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1em;
+        }
+
+        nav {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .content-section {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h3 {
+            color: var(--dark);
+            font-size: 1.5em;
+            margin: 30px 0 15px;
+        }
+
+        h4 {
+            color: #475569;
+            font-size: 1.2em;
+            margin: 20px 0 10px;
+        }
+
+        .mermaid {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .code-block {
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .code-header {
+            background: #30363d;
+            color: white;
+            padding: 12px 20px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header .filename {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .copy-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .copy-btn.copied {
+            background: var(--secondary);
+        }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            background: var(--code-bg);
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        .info-box {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .info-box.info {
+            background: #dbeafe;
+            border-color: var(--primary);
+        }
+
+        .info-box.success {
+            background: #d1fae5;
+            border-color: var(--secondary);
+        }
+
+        .info-box.warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+        }
+
+        .info-box.danger {
+            background: #fee2e2;
+            border-color: var(--danger);
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .card h4 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .tree {
+            font-family: 'Courier New', monospace;
+            background: var(--code-bg);
+            color: #c9d1d9;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        .collapsible {
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .collapsible-header:hover {
+            background: var(--border);
+        }
+
+        .collapsible-icon {
+            transition: transform 0.3s;
+        }
+
+        .collapsible.open .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible.open .collapsible-content {
+            max-height: 5000px;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+
+        .badge.edge {
+            background: #dbeafe;
+            color: var(--primary);
+        }
+
+        .badge.cloud {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .badge.hybrid {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        footer {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            header, nav, .content-section {
+                padding: 20px;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🫀 ECG Edge AI System</h1>
+            <p class="subtitle">Implementacja i optymalizacja algorytmów uczenia głębokiego do klasyfikacji arytmii w niskokosztowych systemach monitoringu EKG z wykorzystaniem technologii Edge AI</p>
+            <p style="margin-top: 10px;"><strong>Autor:</strong> Łukasz Guziczak | <strong>Hardware:</strong> RP2040-Zero + AD8232</p>
+        </header>
+
+        <nav>
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="showSection('overview')">📋 Overview</div>
+                <div class="nav-tab" onclick="showSection('architecture')">🏗️ Architecture</div>
+                <div class="nav-tab" onclick="showSection('structure')">📁 Project Structure</div>
+                <div class="nav-tab" onclick="showSection('protocol')">📡 Protocol</div>
+                <div class="nav-tab" onclick="showSection('firmware')">⚡ Firmware Code</div>
+                <div class="nav-tab" onclick="showSection('pc-software')">💻 PC Software</div>
+                <div class="nav-tab" onclick="showSection('storage')">💾 Storage Strategy</div>
+                <div class="nav-tab" onclick="showSection('validation')">✅ Validation</div>
+            </div>
+        </nav>
+
+        <!-- OVERVIEW SECTION -->
+        <div id="overview" class="content-section active">
+            <h2>📋 System Overview</h2>
+
+            <div class="info-box info">
+                <strong>💡 Główna koncepcja</strong>
+                System hybrydowy łączący edge computing (RP2040) z cloud processing (PC) dla inteligentnej kompresji sygnału EKG poprzez semantic compression kierowaną przez AI.
+            </div>
+
+            <h3>Kluczowe cechy systemu</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>⚡ Edge Computing</h4>
+                    <p>Real-time przetwarzanie na RP2040: sampling 250Hz, QRS detection, feature extraction, TinyML classification</p>
+                </div>
+                <div class="card">
+                    <h4>🧠 Cloud Intelligence</h4>
+                    <p>Model training na PC: CNN/LSTM na MIT-BIH/PTB-XL, kwantyzacja INT8, deployment do edge</p>
+                </div>
+                <div class="card">
+                    <h4>💾 Semantic Compression</h4>
+                    <p>3-tier storage: statystyki (50B/min), features (500B/min), raw anomalies (15KB/event)</p>
+                </div>
+                <div class="card">
+                    <h4>📊 Compression Ratio</h4>
+                    <p>20-50x kompresja przy <5% false negative rate dla krytycznych arytmii</p>
+                </div>
+            </div>
+
+            <h3>Hardware Requirements</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Specification</th>
+                    <th>Cost (PLN)</th>
+                </tr>
+                <tr>
+                    <td>Mikrokontroler</td>
+                    <td>RP2040-Zero (264KB RAM, 2MB Flash, 133MHz)</td>
+                    <td>~10</td>
+                </tr>
+                <tr>
+                    <td>Moduł EKG</td>
+                    <td>AD8232</td>
+                    <td>~20</td>
+                </tr>
+                <tr>
+                    <td>Elektrody</td>
+                    <td>3x zatrzaskowe elektrody EKG</td>
+                    <td>~10</td>
+                </tr>
+                <tr>
+                    <td>MicroSD (opcja)</td>
+                    <td>4GB+ dla extended storage</td>
+                    <td>~5</td>
+                </tr>
+                <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td></td>
+                    <td><strong>~45 PLN</strong></td>
+                </tr>
+            </table>
+
+            <h3>Key Performance Metrics</h3>
+            <div class="info-box success">
+                <strong>✅ Target Metrics</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Accuracy:</strong> >90% na MIT-BIH dataset</li>
+                    <li><strong>Sensitivity:</strong> >95% dla krytycznych arytmii (AF, VT, VF)</li>
+                    <li><strong>Latency:</strong> <100ms dla edge classification</li>
+                    <li><strong>Model Size:</strong> <500KB po kwantyzacji INT8</li>
+                    <li><strong>Storage:</strong> 24h recording w 2MB Flash</li>
+                    <li><strong>False Negative Rate:</strong> <5%</li>
+                </ul>
+            </div>
+
+            <h3>Operational Modes</h3>
+
+            <div class="mermaid">
+graph TD
+    A[System Modes] --> B[Training Mode]
+    A --> C[Deployment Mode]
+    A --> D[Real-time Mode]
+    A --> E[Standalone Holter]
+
+    B --> B1[PC: Train models on datasets]
+    B --> B2[PC: Quantize & optimize]
+    B --> B3[PC: Validate compressed model]
+
+    C --> C1[PC: Package model]
+    C --> C2[USB: Upload to RP2040]
+    C --> C3[RP2040: Store in Flash]
+
+    D --> D1[RP2040: Edge processing]
+    D --> D2[UART: Stream to PC]
+    D --> D3[PC: Live visualization]
+
+    E --> E1[RP2040: Autonomous operation]
+    E --> E2[Flash: Local storage]
+    E --> E3[USB: Download later]
+
+    style B fill:#dbeafe
+    style C fill:#d1fae5
+    style D fill:#fef3c7
+    style E fill:#fee2e2
+            </div>
+        </div>
+
+        <!-- ARCHITECTURE SECTION -->
+        <div id="architecture" class="content-section">
+            <h2>🏗️ System Architecture</h2>
+
+            <h3>Hybrid Edge-Cloud Architecture</h3>
+
+            <div style="display: flex; gap: 30px; margin: 30px 0; flex-wrap: wrap;">
+                <!-- EDGE LAYER -->
+                <div style="flex: 1; min-width: 300px; background: #fee2e2; padding: 20px; border-radius: 10px; border: 3px solid #dc2626;">
+                    <h4 style="text-align: center; margin-top: 0; color: #dc2626;">🔴 EDGE LAYER (RP2040)</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #dc2626;">AD8232 Sensor</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Signal Acquisition (250Hz)</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Digital Filtering</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">QRS Detection (Pan-Tompkins)</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Feature Extraction</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">TinyML Classifier</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Compression Decision</div>
+                        <div style="text-align: center; font-size: 24px; color: #dc2626;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Flash Storage (2MB)</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; border: 2px solid #dc2626; font-weight: 600;">UART Stream →</div>
+                    </div>
+                </div>
+
+                <!-- CLOUD LAYER -->
+                <div style="flex: 1; min-width: 300px; background: #d1fae5; padding: 20px; border-radius: 10px; border: 3px solid #059669;">
+                    <h4 style="text-align: center; margin-top: 0; color: #059669;">🟢 CLOUD LAYER (PC)</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #059669;">← Serial Reader</div>
+                        <div style="text-align: center; font-size: 24px; color: #059669;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Protocol Decoder</div>
+                        <div style="text-align: center; font-size: 24px; color: #059669;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Live Visualization</div>
+                        <div style="text-align: center; font-size: 24px; color: #059669;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Deep Learning Inference</div>
+                        <div style="text-align: center; font-size: 24px; color: #059669;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">Long-term Storage</div>
+                        <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; border: 2px dashed #0284c7; font-style: italic;">
+                            Real-time monitoring<br/>CSV/HDF5 export<br/>Historical analysis
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRAINING PIPELINE -->
+                <div style="flex: 1; min-width: 300px; background: #fef3c7; padding: 20px; border-radius: 10px; border: 3px solid #d97706;">
+                    <h4 style="text-align: center; margin-top: 0; color: #d97706;">🟡 TRAINING PIPELINE (PC)</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #d97706;">Datasets (MIT-BIH, PTB-XL)</div>
+                        <div style="text-align: center; font-size: 24px; color: #d97706;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Preprocessing</div>
+                        <div style="text-align: center; font-size: 24px; color: #d97706;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Model Training (CNN/LSTM)</div>
+                        <div style="text-align: center; font-size: 24px; color: #d97706;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Evaluation</div>
+                        <div style="text-align: center; font-size: 24px; color: #d97706;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Quantization (FP32→INT8)</div>
+                        <div style="text-align: center; font-size: 24px; color: #d97706;">↓</div>
+                        <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">Deploy to Edge</div>
+                        <div style="text-align: center; font-size: 32px; color: #d97706; margin-top: 10px;">⤴</div>
+                        <div style="background: #fee2e2; padding: 12px; border-radius: 8px; text-align: center; font-style: italic; border: 2px dashed #dc2626;">
+                            Upload model.tflite<br/>to RP2040 TinyML
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p style="margin-top: 20px;"><strong>Legend:</strong>
+            <span style="background: #fee2e2; padding: 5px 10px; border-radius: 5px; margin: 0 5px;">🔴 Edge Layer (RP2040)</span>
+            <span style="background: #d1fae5; padding: 5px 10px; border-radius: 5px; margin: 0 5px;">🟢 Cloud Layer (PC)</span>
+            <span style="background: #fef3c7; padding: 5px 10px; border-radius: 5px; margin: 0 5px;">🟡 Training Pipeline</span>
+            </p>
+
+            <h3>Data Flow Architecture</h3>
+
+            <div class="mermaid">
+sequenceDiagram
+    participant AD as AD8232
+    participant RP as RP2040
+    participant PC as PC/Laptop
+
+    Note over AD,RP: Real-time Acquisition
+    loop Every 4ms (250 Hz)
+        AD->>RP: Raw ADC value
+        RP->>RP: Filter signal
+        RP->>RP: Detect QRS
+    end
+
+    Note over RP: Feature Extraction
+    RP->>RP: Calculate RR intervals
+    RP->>RP: Calculate HRV metrics
+    RP->>RP: Extract amplitudes
+
+    Note over RP: Classification
+    RP->>RP: TinyML inference
+    RP->>RP: Compression decision
+
+    alt Anomaly detected
+        RP->>RP: Save raw + context
+        RP->>PC: Stream anomaly event
+    else Normal rhythm
+        RP->>RP: Save statistics only
+        RP->>PC: Stream features
+    end
+
+    PC->>PC: Visualize
+    PC->>PC: Store long-term
+            </div>
+
+            <h3>Memory Architecture (RP2040)</h3>
+
+            <div class="info-box warning">
+                <strong>⚠️ Memory Constraints</strong>
+                RP2040 ma tylko 264KB RAM i 2MB Flash - kluczowe jest efektywne zarządzanie pamięcią!
+            </div>
+
+            <div style="display: flex; gap: 30px; margin: 30px 0; flex-wrap: wrap;">
+                <!-- RAM -->
+                <div style="flex: 1; min-width: 300px; background: #fee2e2; padding: 25px; border-radius: 12px; border: 3px solid #dc2626;">
+                    <h4 style="text-align: center; margin-top: 0; color: #dc2626; font-size: 20px;">🧠 RAM (264KB)</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #dc2626;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Sample Buffer</div>
+                            <div style="font-size: 18px; color: #dc2626;">~30 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #dc2626;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Model Activations</div>
+                            <div style="font-size: 18px; color: #dc2626;">~80 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Variables</div>
+                            <div style="font-size: 18px; color: #dc2626;">~20 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Stack</div>
+                            <div style="font-size: 18px; color: #dc2626;">~30 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px dashed #10b981;">
+                            <div style="font-weight: 700; margin-bottom: 5px; color: #10b981;">Free RAM</div>
+                            <div style="font-size: 18px; color: #10b981;">~100 KB</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #fef2f2; border-radius: 8px; text-align: center; font-size: 14px; border: 2px solid #dc2626;">
+                        <strong>⚠️ Critical:</strong> Model + buffers must fit!
+                    </div>
+                </div>
+
+                <!-- Flash -->
+                <div style="flex: 1; min-width: 300px; background: #d1fae5; padding: 25px; border-radius: 12px; border: 3px solid #10b981;">
+                    <h4 style="text-align: center; margin-top: 0; color: #059669; font-size: 20px;">💾 Flash (2MB)</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #059669;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Firmware</div>
+                            <div style="font-size: 18px; color: #059669;">~200 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #059669;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">TFLite Model</div>
+                            <div style="font-size: 18px; color: #059669;">~400 KB</div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #059669;">
+                            <div style="font-weight: 700; margin-bottom: 5px;">Data Storage</div>
+                            <div style="font-size: 18px; color: #059669;">~1.4 MB</div>
+                        </div>
+
+                        <div style="margin-top: 10px; padding: 12px; background: #f0fdf4; border-radius: 8px; font-size: 14px; border-left: 4px solid #059669;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">Data Storage Breakdown:</div>
+                            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                <span>• Tier 1 (Stats)</span>
+                                <span style="font-weight: 600;">~500 KB</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                <span>• Tier 2 (Features)</span>
+                                <span style="font-weight: 600;">~400 KB</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                <span>• Tier 3 (Raw)</span>
+                                <span style="font-weight: 600;">~500 KB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
+                <strong>💡 Memory Management Strategy:</strong> Careful allocation ensures real-time processing fits in 264KB RAM while 2MB Flash stores ~24h of compressed data using 3-tier architecture.
+            </div>
+
+            <h3>Dual-Core Processing Strategy</h3>
+
+            <div style="display: flex; gap: 30px; margin: 30px 0; flex-wrap: wrap; align-items: flex-start;">
+                <!-- Core 0 -->
+                <div style="flex: 1; min-width: 300px; background: #dbeafe; padding: 25px; border-radius: 12px; border: 3px solid #3b82f6;">
+                    <h4 style="text-align: center; margin-top: 0; color: #1e40af; font-size: 20px;">⚡ Core 0 - Real-time Critical</h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #3b82f6;">
+                            Signal Acquisition<br/><span style="font-size: 14px; color: #3b82f6;">250 Hz sampling</span>
+                        </div>
+                        <div style="text-align: center; font-size: 24px; color: #3b82f6;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            Digital Filtering
+                        </div>
+                        <div style="text-align: center; font-size: 24px; color: #3b82f6;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            QRS Detection
+                        </div>
+                        <div style="text-align: center; font-size: 24px; color: #3b82f6;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            Feature Extraction
+                        </div>
+                        <div style="text-align: center; font-size: 24px; color: #3b82f6;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            UART Communication
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #eff6ff; border-radius: 8px; text-align: center; font-size: 14px; border: 2px solid #3b82f6;">
+                        <strong>⚡ Priority:</strong> Time-critical operations<br/>Must maintain 250Hz sampling rate
+                    </div>
+                </div>
+
+                <!-- Queue Connection -->
+                <div style="display: flex; align-items: center; justify-content: center; min-width: 80px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 36px; color: #8b5cf6;">→</div>
+                        <div style="background: #e9d5ff; color: #6b21a8; padding: 8px 15px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 10px; border: 2px dashed #8b5cf6;">
+                            Queue
+                        </div>
+                        <div style="font-size: 36px; color: #8b5cf6;">→</div>
+                    </div>
+                </div>
+
+                <!-- Core 1 -->
+                <div style="flex: 1; min-width: 300px; background: #d1fae5; padding: 25px; border-radius: 12px; border: 3px solid #10b981;">
+                    <h4 style="text-align: center; margin-top: 0; color: #065f46; font-size: 20px;">🔄 Core 1 - Background Tasks</h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #10b981;">
+                            TinyML Inference<br/><span style="font-size: 14px; color: #10b981;">Classification</span>
+                        </div>
+                        <div style="text-align: center; font-size: 24px; color: #10b981;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            Compression Decision<br/><span style="font-size: 14px; color: #10b981;">Tier selection</span>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="display: inline-block; font-size: 20px; color: #10b981; margin: 0 10px;">↙</div>
+                            <div style="display: inline-block; font-size: 20px; color: #10b981; margin: 0 10px;">↘</div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 14px;">
+                                Flash Write
+                            </div>
+                            <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 14px;">
+                                Statistics Calc
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; text-align: center; font-size: 14px; border: 2px solid #10b981;">
+                        <strong>🔄 Priority:</strong> Non-blocking operations<br/>Can tolerate higher latency
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-left: 4px solid #6b21a8; border-radius: 5px;">
+                <strong>💡 Strategy:</strong> Core 0 handles time-sensitive signal processing while Core 1 performs computationally expensive ML inference and storage operations. Queue-based communication prevents blocking Core 0's real-time operations.
+            </div>
+        </div>
+
+        <!-- PROJECT STRUCTURE SECTION -->
+        <div id="structure" class="content-section">
+            <h2>📁 Project Structure</h2>
+
+            <div class="info-box info">
+                <strong>💡 Best Practices</strong>
+                Struktura zgodna z industry best practices: separation of concerns, modularność, testowalność, dependency injection.
+            </div>
+
+            <div class="tree">ecg-edge-ai/
+│
+├── firmware/                          # RP2040 Edge Layer
+│   ├── src/
+│   │   ├── main.py                   # Entry point
+│   │   ├── config.py                 # Configuration constants
+│   │   ├── acquisition/
+│   │   │   ├── __init__.py
+│   │   │   ├── ad8232.py            # AD8232 driver
+│   │   │   └── sampler.py           # 250Hz sampling logic
+│   │   ├── processing/
+│   │   │   ├── __init__.py
+│   │   │   ├── filters.py           # Bandpass, notch filters
+│   │   │   ├── pan_tompkins.py      # QRS detection
+│   │   │   └── features.py          # RR, HRV, amplitude extraction
+│   │   ├── ml/
+│   │   │   ├── __init__.py
+│   │   │   ├── tflite_model.py      # TF Lite Micro inference
+│   │   │   └── classifier.py        # Decision logic
+│   │   ├── storage/
+│   │   │   ├── __init__.py
+│   │   │   ├── flash_manager.py     # 2MB Flash management
+│   │   │   ├── compression.py       # 3-tier compression
+│   │   │   └── ring_buffer.py       # Priority ring buffer
+│   │   ├── communication/
+│   │   │   ├── __init__.py
+│   │   │   ├── protocol.py          # Binary protocol definition
+│   │   │   └── uart_handler.py      # UART TX/RX
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── logging.py           # Lightweight logging
+│   ├── models/                       # Deployed TFLite models
+│   │   ├── model_quantized.tflite
+│   │   └── model_metadata.json
+│   ├── tests/
+│   │   ├── test_filters.py
+│   │   ├── test_pan_tompkins.py
+│   │   └── test_features.py
+│   ├── boot.py                       # MicroPython boot config
+│   └── requirements.txt              # MicroPython libs
+│
+├── pc_software/                       # Cloud/PC Layer
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── data/
+│   │   │   ├── __init__.py
+│   │   │   ├── datasets.py          # MIT-BIH, PTB-XL loaders
+│   │   │   ├── preprocessing.py     # Signal preprocessing
+│   │   │   └── augmentation.py      # Data augmentation
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── cnn.py               # CNN architecture
+│   │   │   ├── lstm.py              # LSTM architecture
+│   │   │   ├── ensemble.py          # Ensemble voting
+│   │   │   └── base_model.py        # Abstract base class
+│   │   ├── training/
+│   │   │   ├── __init__.py
+│   │   │   ├── trainer.py           # Training loop
+│   │   │   ├── optimizer.py         # Custom optimizers
+│   │   │   └── callbacks.py         # Training callbacks
+│   │   ├── optimization/
+│   │   │   ├── __init__.py
+│   │   │   ├── quantization.py      # FP32→INT8 quantization
+│   │   │   ├── pruning.py           # Model pruning
+│   │   │   └── converter.py         # TFLite conversion
+│   │   ├── evaluation/
+│   │   │   ├── __init__.py
+│   │   │   ├── metrics.py           # Accuracy, F1, sensitivity
+│   │   │   ├── validator.py         # Clinical validation
+│   │   │   └── visualizer.py        # Confusion matrix, ROC
+│   │   ├── real_time/
+│   │   │   ├── __init__.py
+│   │   │   ├── serial_reader.py     # Read from RP2040
+│   │   │   ├── protocol_decoder.py  # Parse binary protocol
+│   │   │   ├── live_inference.py    # Real-time ML inference
+│   │   │   └── dashboard.py         # Live visualization
+│   │   ├── deployment/
+│   │   │   ├── __init__.py
+│   │   │   ├── model_packager.py    # Pack model for firmware
+│   │   │   └── flash_uploader.py    # Upload to RP2040
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       ├── config.py            # Configuration management
+│   │       └── logger.py            # Logging setup
+│   ├── notebooks/                    # Jupyter notebooks
+│   │   ├── 01_data_exploration.ipynb
+│   │   ├── 02_model_training.ipynb
+│   │   ├── 03_optimization.ipynb
+│   │   └── 04_validation.ipynb
+│   ├── scripts/                      # CLI scripts
+│   │   ├── train_model.py
+│   │   ├── evaluate_model.py
+│   │   ├── convert_to_tflite.py
+│   │   ├── deploy_to_device.py
+│   │   └── run_dashboard.py
+│   ├── tests/
+│   │   ├── test_models.py
+│   │   ├── test_preprocessing.py
+│   │   └── test_metrics.py
+│   ├── requirements.txt
+│   └── setup.py
+│
+├── data/                              # Datasets (gitignored)
+│   ├── raw/
+│   │   ├── mitbih/
+│   │   ├── ptb-xl/
+│   │   └── own_recordings/
+│   ├── processed/
+│   │   ├── train/
+│   │   ├── val/
+│   │   └── test/
+│   └── exported/
+│
+├── models/                            # Trained models
+│   ├── checkpoints/
+│   ├── production/
+│   └── experiments/
+│
+├── docs/                              # Documentation
+│   ├── architecture.md
+│   ├── protocol.md
+│   ├── deployment.md
+│   └── api_reference.md
+│
+├── .gitignore
+├── README.md
+├── LICENSE
+└── pyproject.toml
+            </div>
+
+            <h3>Module Responsibilities</h3>
+
+            <table>
+                <tr>
+                    <th>Module</th>
+                    <th>Location</th>
+                    <th>Responsibility</th>
+                    <th>Type</th>
+                </tr>
+                <tr>
+                    <td>acquisition</td>
+                    <td>firmware/src/</td>
+                    <td>AD8232 driver, signal sampling 250Hz</td>
+                    <td><span class="badge edge">Edge</span></td>
+                </tr>
+                <tr>
+                    <td>processing</td>
+                    <td>firmware/src/</td>
+                    <td>Filtering, QRS detection, feature extraction</td>
+                    <td><span class="badge edge">Edge</span></td>
+                </tr>
+                <tr>
+                    <td>ml</td>
+                    <td>firmware/src/</td>
+                    <td>TFLite inference, classification decision</td>
+                    <td><span class="badge edge">Edge</span></td>
+                </tr>
+                <tr>
+                    <td>storage</td>
+                    <td>firmware/src/</td>
+                    <td>Flash management, 3-tier compression</td>
+                    <td><span class="badge edge">Edge</span></td>
+                </tr>
+                <tr>
+                    <td>communication</td>
+                    <td>firmware/src/</td>
+                    <td>Binary protocol, UART streaming</td>
+                    <td><span class="badge hybrid">Hybrid</span></td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>pc_software/src/</td>
+                    <td>Dataset loading, preprocessing</td>
+                    <td><span class="badge cloud">Cloud</span></td>
+                </tr>
+                <tr>
+                    <td>models</td>
+                    <td>pc_software/src/</td>
+                    <td>CNN/LSTM architectures</td>
+                    <td><span class="badge cloud">Cloud</span></td>
+                </tr>
+                <tr>
+                    <td>training</td>
+                    <td>pc_software/src/</td>
+                    <td>Training loop, optimization</td>
+                    <td><span class="badge cloud">Cloud</span></td>
+                </tr>
+                <tr>
+                    <td>optimization</td>
+                    <td>pc_software/src/</td>
+                    <td>Quantization, pruning, TFLite conversion</td>
+                    <td><span class="badge cloud">Cloud</span></td>
+                </tr>
+                <tr>
+                    <td>evaluation</td>
+                    <td>pc_software/src/</td>
+                    <td>Metrics, validation, visualization</td>
+                    <td><span class="badge cloud">Cloud</span></td>
+                </tr>
+                <tr>
+                    <td>real_time</td>
+                    <td>pc_software/src/</td>
+                    <td>Serial communication, live dashboard</td>
+                    <td><span class="badge hybrid">Hybrid</span></td>
+                </tr>
+                <tr>
+                    <td>deployment</td>
+                    <td>pc_software/src/</td>
+                    <td>Model packaging, firmware upload</td>
+                    <td><span class="badge hybrid">Hybrid</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- PROTOCOL SECTION -->
+        <div id="protocol" class="content-section">
+            <h2>📡 Communication Protocol</h2>
+
+            <div class="info-box info">
+                <strong>💡 Binary Protocol</strong>
+                Efektywny binarny protokół dla komunikacji RP2040 ↔ PC przez UART (115200 baud).
+            </div>
+
+            <h3>Message Format</h3>
+
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+                    <!-- Header -->
+                    <div style="background: #dbeafe; border: 3px solid #3b82f6; border-radius: 10px; padding: 20px; text-align: center; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 18px; color: #1e40af; margin-bottom: 8px;">Header</div>
+                        <div style="font-size: 14px; color: #1e40af;">2 bytes</div>
+                        <div style="font-family: monospace; font-size: 16px; margin-top: 8px; background: white; padding: 8px; border-radius: 5px; font-weight: 600;">0xEC60</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="font-size: 32px; color: #6366f1;">→</div>
+
+                    <!-- Type -->
+                    <div style="background: #d1fae5; border: 3px solid #10b981; border-radius: 10px; padding: 20px; text-align: center; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 18px; color: #065f46; margin-bottom: 8px;">Type</div>
+                        <div style="font-size: 14px; color: #065f46;">1 byte</div>
+                        <div style="font-family: monospace; font-size: 16px; margin-top: 8px; background: white; padding: 8px; border-radius: 5px; font-weight: 600;">0x01-0xFF</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="font-size: 32px; color: #6366f1;">→</div>
+
+                    <!-- Length -->
+                    <div style="background: #fef3c7; border: 3px solid #f59e0b; border-radius: 10px; padding: 20px; text-align: center; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 18px; color: #92400e; margin-bottom: 8px;">Length</div>
+                        <div style="font-size: 14px; color: #92400e;">2 bytes</div>
+                        <div style="font-size: 14px; margin-top: 8px; background: white; padding: 8px; border-radius: 5px; font-weight: 600;">Payload size</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="font-size: 32px; color: #6366f1;">→</div>
+
+                    <!-- Payload -->
+                    <div style="background: #fee2e2; border: 3px solid #ef4444; border-radius: 10px; padding: 20px; text-align: center; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 18px; color: #991b1b; margin-bottom: 8px;">Payload</div>
+                        <div style="font-size: 14px; color: #991b1b;">N bytes</div>
+                        <div style="font-size: 14px; margin-top: 8px; background: white; padding: 8px; border-radius: 5px; font-weight: 600;">Variable data</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="font-size: 32px; color: #6366f1;">→</div>
+
+                    <!-- Checksum -->
+                    <div style="background: #e9d5ff; border: 3px solid #a855f7; border-radius: 10px; padding: 20px; text-align: center; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 18px; color: #6b21a8; margin-bottom: 8px;">Checksum</div>
+                        <div style="font-size: 14px; color: #6b21a8;">1 byte</div>
+                        <div style="font-family: monospace; font-size: 14px; margin-top: 8px; background: white; padding: 8px; border-radius: 5px; font-weight: 600;">Sum & 0xFF</div>
+                    </div>
+                </div>
+
+                <!-- Total Size -->
+                <div style="text-align: center; margin-top: 25px; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 2px solid #3b82f6;">
+                    <strong style="color: #1e40af;">Total Minimum Size:</strong>
+                    <span style="font-size: 20px; color: #1e40af; font-weight: 700; margin-left: 10px;">6 bytes + Payload</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 5px;">
+                <strong>💡 Protocol Design:</strong> Simple binary protocol optimized for UART communication. Fixed header (0xEC60) ensures message synchronization, while checksum validates data integrity.
+            </div>
+
+            <h3>Message Types</h3>
+
+            <table>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Payload Structure</th>
+                    <th>Size</th>
+                </tr>
+                <tr>
+                    <td>0x01</td>
+                    <td>RAW_SAMPLE</td>
+                    <td>[timestamp(4), adc_value(2)]</td>
+                    <td>6 bytes</td>
+                </tr>
+                <tr>
+                    <td>0x02</td>
+                    <td>QRS_DETECTED</td>
+                    <td>[timestamp(4), rr_interval(2), amplitude(2)]</td>
+                    <td>8 bytes</td>
+                </tr>
+                <tr>
+                    <td>0x03</td>
+                    <td>FEATURES</td>
+                    <td>[timestamp(4), hr(2), hrv_rmssd(2), hrv_sdnn(2)]</td>
+                    <td>10 bytes</td>
+                </tr>
+                <tr>
+                    <td>0x04</td>
+                    <td>CLASSIFICATION</td>
+                    <td>[timestamp(4), class_id(1), confidence(1)]</td>
+                    <td>6 bytes</td>
+                </tr>
+                <tr>
+                    <td>0x05</td>
+                    <td>COMPRESSED</td>
+                    <td>[start_time(4), duration(2), stats(variable)]</td>
+                    <td>Variable</td>
+                </tr>
+                <tr>
+                    <td>0x06</td>
+                    <td>ANOMALY_EVENT</td>
+                    <td>[timestamp(4), class(1), confidence(1), raw_data(variable)]</td>
+                    <td>Variable</td>
+                </tr>
+                <tr>
+                    <td>0x10</td>
+                    <td>HEARTBEAT</td>
+                    <td>[timestamp(4), status(1)]</td>
+                    <td>5 bytes</td>
+                </tr>
+                <tr>
+                    <td>0x11</td>
+                    <td>ERROR</td>
+                    <td>[error_code(1), message(variable)]</td>
+                    <td>Variable</td>
+                </tr>
+            </table>
+
+            <h3>Protocol Flow</h3>
+
+            <div class="mermaid">
+sequenceDiagram
+    participant RP as RP2040
+    participant PC as PC Software
+
+    Note over RP,PC: Initialization
+    RP->>PC: HEARTBEAT (0x10)
+    PC->>RP: ACK
+
+    Note over RP,PC: Normal Operation
+    loop Every beat
+        RP->>PC: QRS_DETECTED (0x02)
+        RP->>PC: FEATURES (0x03)
+    end
+
+    Note over RP,PC: Anomaly Detection
+    RP->>RP: Detect anomaly
+    RP->>PC: CLASSIFICATION (0x04)
+    RP->>PC: ANOMALY_EVENT (0x06)
+
+    Note over RP,PC: Periodic Updates
+    loop Every minute
+        RP->>PC: COMPRESSED (0x05)
+    end
+
+    Note over RP,PC: Error Handling
+    RP->>PC: ERROR (0x11)
+    PC->>PC: Log error
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Firmware: Protocol Encoder (firmware/src/communication/protocol.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">firmware/src/communication/protocol.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># firmware/src/communication/protocol.py
+
+import struct
+from micropython import const
+
+HEADER = const(0xEC60)  # "ECG0"
+MSG_RAW_SAMPLE = const(0x01)
+MSG_QRS_DETECTED = const(0x02)
+MSG_FEATURES = const(0x03)
+MSG_CLASSIFICATION = const(0x04)
+MSG_COMPRESSED = const(0x05)
+MSG_ANOMALY_EVENT = const(0x06)
+MSG_HEARTBEAT = const(0x10)
+MSG_ERROR = const(0x11)
+
+class ProtocolEncoder:
+    """Binary protocol encoder for RP2040 → PC communication"""
+
+    def __init__(self, uart):
+        self.uart = uart
+
+    def send_qrs_detected(self, timestamp, rr_interval, amplitude):
+        """Send QRS detection event
+
+        Args:
+            timestamp: Unix timestamp (ms)
+            rr_interval: RR interval in ms
+            amplitude: QRS amplitude in mV * 1000
+        """
+        payload = struct.pack('<IHH', timestamp, rr_interval, amplitude)
+        self._send_message(MSG_QRS_DETECTED, payload)
+
+    def send_features(self, timestamp, hr, hrv_rmssd, hrv_sdnn):
+        """Send extracted features
+
+        Args:
+            timestamp: Unix timestamp (ms)
+            hr: Heart rate in BPM
+            hrv_rmssd: HRV RMSSD in ms
+            hrv_sdnn: HRV SDNN in ms
+        """
+        payload = struct.pack('<IHHH', timestamp, hr, hrv_rmssd, hrv_sdnn)
+        self._send_message(MSG_FEATURES, payload)
+
+    def send_classification(self, timestamp, class_id, confidence):
+        """Send ML classification result
+
+        Args:
+            timestamp: Unix timestamp (ms)
+            class_id: Predicted class (0-4)
+            confidence: Confidence score (0-100)
+        """
+        payload = struct.pack('<IBB', timestamp, class_id, confidence)
+        self._send_message(MSG_CLASSIFICATION, payload)
+
+    def send_anomaly_event(self, timestamp, class_id, confidence, raw_data):
+        """Send anomaly event with raw ECG context
+
+        Args:
+            timestamp: Unix timestamp (ms)
+            class_id: Anomaly class
+            confidence: Confidence score
+            raw_data: Raw ECG samples (list of ints)
+        """
+        header = struct.pack('<IBB', timestamp, class_id, confidence)
+        # Pack raw data as 16-bit signed integers
+        data = struct.pack(f'<{len(raw_data)}h', *raw_data)
+        payload = header + data
+        self._send_message(MSG_ANOMALY_EVENT, payload)
+
+    def send_compressed(self, start_time, duration, stats):
+        """Send compressed statistics for normal period
+
+        Args:
+            start_time: Period start timestamp
+            duration: Period duration in seconds
+            stats: Dict with hr_mean, hr_std, hrv_rmssd, hrv_sdnn
+        """
+        payload = struct.pack('<IH HHHH',
+                            start_time,
+                            duration,
+                            stats['hr_mean'],
+                            stats['hr_std'],
+                            stats['hrv_rmssd'],
+                            stats['hrv_sdnn'])
+        self._send_message(MSG_COMPRESSED, payload)
+
+    def send_heartbeat(self, timestamp, status):
+        """Send keepalive heartbeat
+
+        Args:
+            timestamp: Current timestamp
+            status: System status code
+        """
+        payload = struct.pack('<IB', timestamp, status)
+        self._send_message(MSG_HEARTBEAT, payload)
+
+    def send_error(self, error_code, message):
+        """Send error message
+
+        Args:
+            error_code: Error code
+            message: Error message string
+        """
+        payload = struct.pack(f'<B{len(message)}s', error_code, message.encode())
+        self._send_message(MSG_ERROR, payload)
+
+    def _send_message(self, msg_type, payload):
+        """Internal: construct and send message with checksum"""
+        length = len(payload)
+        header = struct.pack('<HBH', HEADER, msg_type, length)
+        checksum = self._calculate_checksum(header + payload)
+        message = header + payload + bytes([checksum])
+        self.uart.write(message)
+
+    @staticmethod
+    def _calculate_checksum(data):
+        """Calculate simple checksum"""
+        return sum(data) & 0xFF</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>PC Software: Protocol Decoder (pc_software/src/real_time/protocol_decoder.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">pc_software/src/real_time/protocol_decoder.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># pc_software/src/real_time/protocol_decoder.py
+
+import struct
+from enum import IntEnum
+from typing import Dict, Generator, Optional
+
+class MessageType(IntEnum):
+    """Protocol message types"""
+    RAW_SAMPLE = 0x01
+    QRS_DETECTED = 0x02
+    FEATURES = 0x03
+    CLASSIFICATION = 0x04
+    COMPRESSED = 0x05
+    ANOMALY_EVENT = 0x06
+    HEARTBEAT = 0x10
+    ERROR = 0x11
+
+class ProtocolDecoder:
+    """Binary protocol decoder for PC ← RP2040 communication"""
+
+    HEADER = 0xEC60
+    MIN_MESSAGE_SIZE = 6  # Header(2) + Type(1) + Length(2) + Checksum(1)
+
+    def __init__(self):
+        self.buffer = bytearray()
+        self.stats = {
+            'messages_received': 0,
+            'checksum_errors': 0,
+            'sync_errors': 0
+        }
+
+    def feed(self, data: bytes) -> Generator[Dict, None, None]:
+        """Feed incoming bytes, yield complete messages
+
+        Args:
+            data: Raw bytes from serial port
+
+        Yields:
+            Dict with decoded message data
+        """
+        self.buffer.extend(data)
+
+        while len(self.buffer) >= self.MIN_MESSAGE_SIZE:
+            # Find header
+            if struct.unpack('<H', self.buffer[:2])[0] != self.HEADER:
+                self.buffer.pop(0)  # Skip invalid byte
+                self.stats['sync_errors'] += 1
+                continue
+
+            msg_type = self.buffer[2]
+            length = struct.unpack('<H', self.buffer[3:5])[0]
+
+            # Wait for complete message
+            if len(self.buffer) < self.MIN_MESSAGE_SIZE + length:
+                break
+
+            payload = self.buffer[5:5+length]
+            checksum = self.buffer[5+length]
+
+            # Verify checksum
+            calculated = sum(self.buffer[:5+length]) & 0xFF
+            if calculated != checksum:
+                self.stats['checksum_errors'] += 1
+                self.buffer.pop(0)  # Try to resync
+                continue
+
+            # Decode message
+            try:
+                message = self._decode_message(msg_type, payload)
+                self.stats['messages_received'] += 1
+                yield message
+            except Exception as e:
+                print(f"Decode error: {e}")
+
+            # Remove processed message
+            self.buffer = self.buffer[self.MIN_MESSAGE_SIZE + length:]
+
+    def _decode_message(self, msg_type: int, payload: bytes) -> Dict:
+        """Decode message payload based on type"""
+
+        if msg_type == MessageType.RAW_SAMPLE:
+            timestamp, adc_value = struct.unpack('<IH', payload)
+            return {
+                'type': 'raw_sample',
+                'timestamp': timestamp,
+                'adc_value': adc_value
+            }
+
+        elif msg_type == MessageType.QRS_DETECTED:
+            timestamp, rr, amp = struct.unpack('<IHH', payload)
+            return {
+                'type': 'qrs',
+                'timestamp': timestamp,
+                'rr_interval': rr,
+                'amplitude': amp / 1000.0  # Convert back to mV
+            }
+
+        elif msg_type == MessageType.FEATURES:
+            timestamp, hr, rmssd, sdnn = struct.unpack('<IHHH', payload)
+            return {
+                'type': 'features',
+                'timestamp': timestamp,
+                'hr': hr,
+                'hrv_rmssd': rmssd,
+                'hrv_sdnn': sdnn
+            }
+
+        elif msg_type == MessageType.CLASSIFICATION:
+            timestamp, class_id, confidence = struct.unpack('<IBB', payload)
+            return {
+                'type': 'classification',
+                'timestamp': timestamp,
+                'class_id': class_id,
+                'class_name': self._get_class_name(class_id),
+                'confidence': confidence / 100.0
+            }
+
+        elif msg_type == MessageType.COMPRESSED:
+            start, dur, hr_mean, hr_std, rmssd, sdnn = struct.unpack('<IHHHHH', payload)
+            return {
+                'type': 'compressed',
+                'start_time': start,
+                'duration': dur,
+                'hr_mean': hr_mean,
+                'hr_std': hr_std,
+                'hrv_rmssd': rmssd,
+                'hrv_sdnn': sdnn
+            }
+
+        elif msg_type == MessageType.ANOMALY_EVENT:
+            # Header: timestamp(4) + class(1) + confidence(1) = 6 bytes
+            timestamp, class_id, confidence = struct.unpack('<IBB', payload[:6])
+            # Rest is raw data
+            num_samples = (len(payload) - 6) // 2
+            raw_data = struct.unpack(f'<{num_samples}h', payload[6:])
+            return {
+                'type': 'anomaly',
+                'timestamp': timestamp,
+                'class_id': class_id,
+                'class_name': self._get_class_name(class_id),
+                'confidence': confidence / 100.0,
+                'raw_samples': raw_data
+            }
+
+        elif msg_type == MessageType.HEARTBEAT:
+            timestamp, status = struct.unpack('<IB', payload)
+            return {
+                'type': 'heartbeat',
+                'timestamp': timestamp,
+                'status': status
+            }
+
+        elif msg_type == MessageType.ERROR:
+            error_code = struct.unpack('<B', payload[:1])[0]
+            message = payload[1:].decode('utf-8', errors='ignore')
+            return {
+                'type': 'error',
+                'error_code': error_code,
+                'message': message
+            }
+
+        else:
+            return {
+                'type': 'unknown',
+                'msg_type': msg_type,
+                'payload': payload.hex()
+            }
+
+    @staticmethod
+    def _get_class_name(class_id: int) -> str:
+        """Map class ID to name"""
+        classes = {
+            0: 'Normal',
+            1: 'Atrial Fibrillation',
+            2: 'PVC',
+            3: 'Bradycardia',
+            4: 'Tachycardia'
+        }
+        return classes.get(class_id, 'Unknown')
+
+    def get_stats(self) -> Dict:
+        """Get decoder statistics"""
+        return self.stats.copy()</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIRMWARE CODE SECTION -->
+        <div id="firmware" class="content-section">
+            <h2>⚡ Firmware Code (RP2040)</h2>
+
+            <div class="info-box warning">
+                <strong>⚠️ Edge Constraints</strong>
+                Firmware musi być ultra-efektywny: 264KB RAM, 2MB Flash, real-time constraints (250Hz sampling).
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Configuration (firmware/src/config.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">firmware/src/config.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># firmware/src/config.py
+
+class Config:
+    """System configuration constants"""
+
+    # Hardware pins
+    ADC_PIN = 29  # GPIO29 = ADC3
+    LO_PLUS_PIN = 27
+    LO_MINUS_PIN = 28
+    UART_TX_PIN = 0
+    UART_RX_PIN = 1
+
+    # Sampling
+    SAMPLE_RATE = 250  # Hz
+    BUFFER_SIZE = 750  # 3 seconds @ 250Hz
+    ADC_RESOLUTION = 65536  # 16-bit
+    ADC_VREF = 3.3  # Volts
+
+    # Signal processing
+    FILTER_LOWCUT = 0.5  # Hz (highpass)
+    FILTER_HIGHCUT = 40  # Hz (lowpass)
+    NOTCH_FREQ = 50  # Hz (EU) or 60 (US)
+    NOTCH_Q = 30  # Quality factor
+
+    # QRS Detection (Pan-Tompkins)
+    QRS_THRESHOLD = 0.6  # Multiplier for adaptive threshold
+    QRS_MIN_DISTANCE = 150  # Minimum 150ms between QRS (400 BPM max)
+    QRS_WINDOW = 25  # Samples for peak detection
+
+    # Feature extraction
+    HRV_WINDOW = 300  # 300 beats for HRV calculation
+    FEATURE_UPDATE_RATE = 1  # Hz (send features every second)
+
+    # Machine Learning
+    MODEL_PATH = '/models/model_quantized.tflite'
+    INFERENCE_WINDOW = 750  # 3 seconds
+    CONFIDENCE_THRESHOLD = 0.90
+
+    # Storage - 3-tier thresholds
+    TIER1_THRESHOLD = 0.95  # High confidence normal → stats only
+    TIER2_THRESHOLD = 0.85  # Medium confidence → features
+    # Below TIER2 → save raw data
+
+    FLASH_SIZE = 2_000_000  # 2MB
+    FLASH_RESERVE = 500_000  # Reserve for firmware + model
+    FLASH_DATA_SIZE = FLASH_SIZE - FLASH_RESERVE
+
+    # Ring buffer allocation
+    TIER1_SIZE = int(FLASH_DATA_SIZE * 0.33)  # 500KB for stats
+    TIER2_SIZE = int(FLASH_DATA_SIZE * 0.27)  # 400KB for features
+    TIER3_SIZE = int(FLASH_DATA_SIZE * 0.40)  # 600KB for raw
+
+    # Communication
+    UART_BAUDRATE = 115200
+    UART_TIMEOUT = 100  # ms
+    HEARTBEAT_INTERVAL = 5000  # ms
+
+    # Classes
+    CLASS_NAMES = [
+        'Normal',
+        'Atrial Fibrillation',
+        'PVC',
+        'Bradycardia',
+        'Tachycardia'
+    ]
+
+    # Clinical thresholds
+    HR_BRADYCARDIA = 60  # BPM
+    HR_TACHYCARDIA = 100  # BPM
+    HR_MIN = 30  # Absolute minimum
+    HR_MAX = 250  # Absolute maximum</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Pan-Tompkins QRS Detection (firmware/src/processing/pan_tompkins.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">firmware/src/processing/pan_tompkins.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># firmware/src/processing/pan_tompkins.py
+
+import array
+from config import Config
+
+class PanTompkins:
+    """Pan-Tompkins QRS detection algorithm
+
+    Real-time implementation optimized for RP2040.
+    Reference: Pan & Tompkins (1985), IEEE Trans BME
+    """
+
+    def __init__(self, sample_rate=250):
+        self.fs = sample_rate
+        self.dt = 1000 / sample_rate  # ms per sample
+
+        # Derivative filter: y[n] = (2x[n] + x[n-1] - x[n-3] - 2x[n-4]) / 8
+        self.deriv_buffer = array.array('f', [0] * 5)
+
+        # Moving window integration: window = 150ms
+        self.mwi_window = int(0.15 * sample_rate)
+        self.mwi_buffer = array.array('f', [0] * self.mwi_window)
+        self.mwi_sum = 0.0
+        self.mwi_idx = 0
+
+        # Adaptive thresholding
+        self.threshold = 0.0
+        self.spk = 0.0  # Signal peak
+        self.npk = 0.0  # Noise peak
+
+        # QRS detection state
+        self.last_qrs_time = 0
+        self.rr_intervals = array.array('H', [0] * 8)  # Last 8 RR intervals
+        self.rr_idx = 0
+        self.qrs_count = 0
+
+    def process(self, sample, timestamp_ms):
+        """Process single sample, return QRS info if detected
+
+        Args:
+            sample: Filtered ECG sample
+            timestamp_ms: Current timestamp in ms
+
+        Returns:
+            Dict with QRS info if detected, None otherwise
+        """
+        # 1. Derivative (emphasize high frequencies)
+        self.deriv_buffer = self.deriv_buffer[1:] + array.array('f', [sample])
+        derivative = (2*self.deriv_buffer[4] + self.deriv_buffer[3]
+                     - self.deriv_buffer[1] - 2*self.deriv_buffer[0]) / 8.0
+
+        # 2. Squaring (make all values positive, amplify)
+        squared = derivative * derivative
+
+        # 3. Moving window integration
+        old_value = self.mwi_buffer[self.mwi_idx]
+        self.mwi_buffer[self.mwi_idx] = squared
+        self.mwi_sum = self.mwi_sum - old_value + squared
+        self.mwi_idx = (self.mwi_idx + 1) % self.mwi_window
+        mwi = self.mwi_sum / self.mwi_window
+
+        # 4. Adaptive thresholding
+        if self.threshold == 0.0:
+            # Initialize threshold
+            self.threshold = mwi * Config.QRS_THRESHOLD
+
+        # Check for QRS
+        time_since_last = timestamp_ms - self.last_qrs_time
+
+        if mwi > self.threshold and time_since_last > Config.QRS_MIN_DISTANCE:
+            # QRS detected!
+            self.last_qrs_time = timestamp_ms
+
+            # Update RR intervals
+            if self.qrs_count > 0:
+                rr_interval = int(time_since_last)
+                self.rr_intervals[self.rr_idx] = rr_interval
+                self.rr_idx = (self.rr_idx + 1) % len(self.rr_intervals)
+
+            self.qrs_count += 1
+
+            # Update signal peak (learning rate = 0.125)
+            self.spk = 0.125 * mwi + 0.875 * self.spk
+            self.threshold = self.npk + Config.QRS_THRESHOLD * (self.spk - self.npk)
+
+            return {
+                'detected': True,
+                'timestamp': timestamp_ms,
+                'rr_interval': self.get_current_rr(),
+                'amplitude': mwi,
+                'qrs_count': self.qrs_count
+            }
+        else:
+            # Update noise peak
+            if mwi < self.threshold:
+                self.npk = 0.125 * mwi + 0.875 * self.npk
+                self.threshold = self.npk + Config.QRS_THRESHOLD * (self.spk - self.npk)
+
+        return None
+
+    def get_current_rr(self):
+        """Get most recent RR interval"""
+        idx = (self.rr_idx - 1) % len(self.rr_intervals)
+        return self.rr_intervals[idx] if self.qrs_count > 1 else 0
+
+    def get_heart_rate(self):
+        """Calculate heart rate from RR intervals"""
+        if self.qrs_count < 2:
+            return 0
+
+        # Average last 8 RR intervals
+        valid_rrs = [rr for rr in self.rr_intervals if rr > 0]
+        if not valid_rrs:
+            return 0
+
+        avg_rr = sum(valid_rrs) / len(valid_rrs)
+        hr = 60000.0 / avg_rr  # BPM
+
+        # Sanity check
+        if Config.HR_MIN <= hr <= Config.HR_MAX:
+            return int(hr)
+        return 0
+
+    def get_hrv_metrics(self):
+        """Calculate HRV metrics (RMSSD, SDNN)"""
+        if self.qrs_count < 4:
+            return {'rmssd': 0, 'sdnn': 0}
+
+        valid_rrs = [rr for rr in self.rr_intervals if rr > 0]
+        if len(valid_rrs) < 2:
+            return {'rmssd': 0, 'sdnn': 0}
+
+        # SDNN (standard deviation of NN intervals)
+        mean_rr = sum(valid_rrs) / len(valid_rrs)
+        variance = sum((rr - mean_rr)**2 for rr in valid_rrs) / len(valid_rrs)
+        sdnn = int(variance ** 0.5)
+
+        # RMSSD (root mean square of successive differences)
+        diffs = [(valid_rrs[i+1] - valid_rrs[i])**2
+                 for i in range(len(valid_rrs)-1)]
+        rmssd = int((sum(diffs) / len(diffs)) ** 0.5) if diffs else 0
+
+        return {'rmssd': rmssd, 'sdnn': sdnn}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>3-Tier Compression Manager (firmware/src/storage/compression.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">firmware/src/storage/compression.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># firmware/src/storage/compression.py
+
+import json
+from config import Config
+
+class CompressionManager:
+    """3-tier semantic compression manager
+
+    Tier 1 (Stats only): High confidence normal rhythm
+    Tier 2 (Features): Medium confidence
+    Tier 3 (Raw data): Anomalies or low confidence
+    """
+
+    def __init__(self, flash_size=Config.FLASH_DATA_SIZE):
+        self.flash_size = flash_size
+
+        # Storage buffers
+        self.tier1_buffer = []  # List of stat dicts
+        self.tier2_buffer = []  # List of feature dicts
+        self.tier3_buffer = []  # List of raw segment dicts
+
+        # Current accumulation (for Tier 1)
+        self.current_period = {
+            'start_time': 0,
+            'duration': 0,
+            'hr_samples': [],
+            'rr_samples': [],
+            'hrv_rmssd_samples': [],
+            'hrv_sdnn_samples': []
+        }
+
+        self.stats = {
+            'tier1_savings': 0,  # Bytes saved
+            'tier2_savings': 0,
+            'tier3_raw_stored': 0,
+            'total_segments': 0
+        }
+
+    def decide_storage_tier(self, classification_result, confidence, features):
+        """Decide which tier to use based on ML confidence
+
+        Args:
+            classification_result: Predicted class (0-4)
+            confidence: Model confidence (0.0-1.0)
+            features: Dict with extracted features
+
+        Returns:
+            int: Tier number (1, 2, or 3)
+        """
+        # Tier 1: High confidence normal rhythm
+        if (classification_result == 0 and  # Normal class
+            confidence >= Config.TIER1_THRESHOLD):
+            return 1
+
+        # Tier 2: Medium confidence normal
+        elif (classification_result == 0 and
+              confidence >= Config.TIER2_THRESHOLD):
+            return 2
+
+        # Tier 3: Anomaly or low confidence
+        else:
+            return 3
+
+    def store_tier1(self, timestamp, features):
+        """Store Tier 1 (statistics only)
+
+        Accumulates data over time, periodically saves stats.
+        Target: ~50 bytes per minute
+        """
+        if self.current_period['start_time'] == 0:
+            self.current_period['start_time'] = timestamp
+
+        # Accumulate samples
+        self.current_period['hr_samples'].append(features['hr'])
+        self.current_period['rr_samples'].append(features.get('rr_interval', 0))
+        self.current_period['hrv_rmssd_samples'].append(features['hrv_rmssd'])
+        self.current_period['hrv_sdnn_samples'].append(features['hrv_sdnn'])
+        self.current_period['duration'] = (timestamp - self.current_period['start_time']) // 1000
+
+        # Save every 60 seconds
+        if self.current_period['duration'] >= 60:
+            self._flush_tier1()
+
+    def _flush_tier1(self):
+        """Flush accumulated stats to storage"""
+        if not self.current_period['hr_samples']:
+            return
+
+        # Calculate statistics
+        hr_samples = self.current_period['hr_samples']
+        stats = {
+            'start_time': self.current_period['start_time'],
+            'duration': self.current_period['duration'],
+            'hr_mean': int(sum(hr_samples) / len(hr_samples)),
+            'hr_std': int(self._std(hr_samples)),
+            'hrv_rmssd': int(sum(self.current_period['hrv_rmssd_samples']) /
+                           len(self.current_period['hrv_rmssd_samples'])),
+            'hrv_sdnn': int(sum(self.current_period['hrv_sdnn_samples']) /
+                          len(self.current_period['hrv_sdnn_samples'])),
+            'qrs_count': len(hr_samples)
+        }
+
+        self.tier1_buffer.append(stats)
+
+        # Calculate savings (vs storing raw)
+        raw_size = self.current_period['duration'] * 250 * 2  # 250Hz, 2 bytes/sample
+        compressed_size = 50  # Approximate JSON size
+        self.stats['tier1_savings'] += (raw_size - compressed_size)
+        self.stats['total_segments'] += 1
+
+        # Reset accumulator
+        self.current_period = {
+            'start_time': 0,
+            'duration': 0,
+            'hr_samples': [],
+            'rr_samples': [],
+            'hrv_rmssd_samples': [],
+            'hrv_sdnn_samples': []
+        }
+
+    def store_tier2(self, timestamp, features, raw_buffer):
+        """Store Tier 2 (features + minimal raw)
+
+        Stores extracted features plus QRS locations.
+        Target: ~500 bytes per minute
+        """
+        # Extract QRS peaks from buffer
+        qrs_peaks = self._extract_qrs_peaks(raw_buffer)
+
+        data = {
+            'timestamp': timestamp,
+            'features': features,
+            'qrs_peaks': qrs_peaks,  # Just peak locations, not full signal
+            'duration': len(raw_buffer) / Config.SAMPLE_RATE
+        }
+
+        self.tier2_buffer.append(data)
+
+        # Calculate savings
+        raw_size = len(raw_buffer) * 2
+        compressed_size = 500  # Approximate
+        self.stats['tier2_savings'] += (raw_size - compressed_size)
+        self.stats['total_segments'] += 1
+
+    def store_tier3(self, timestamp, classification, confidence, raw_buffer):
+        """Store Tier 3 (full raw data with context)
+
+        Stores complete raw ECG with ±30s context.
+        Target: ~15KB per event
+        """
+        data = {
+            'timestamp': timestamp,
+            'class_id': classification,
+            'class_name': Config.CLASS_NAMES[classification],
+            'confidence': confidence,
+            'raw_samples': list(raw_buffer),  # Full raw data
+            'sample_rate': Config.SAMPLE_RATE,
+            'duration': len(raw_buffer) / Config.SAMPLE_RATE
+        }
+
+        self.tier3_buffer.append(data)
+
+        self.stats['tier3_raw_stored'] += len(raw_buffer) * 2
+        self.stats['total_segments'] += 1
+
+    def get_compression_ratio(self):
+        """Calculate overall compression ratio"""
+        total_savings = (self.stats['tier1_savings'] +
+                        self.stats['tier2_savings'])
+        total_stored = (total_savings +
+                       self.stats['tier3_raw_stored'])
+
+        if total_stored == 0:
+            return 0
+
+        # Without compression, everything would be raw
+        uncompressed = total_stored + total_savings
+        ratio = uncompressed / total_stored if total_stored > 0 else 0
+        return ratio
+
+    def export_to_file(self, filename):
+        """Export all stored data to file"""
+        data = {
+            'tier1': self.tier1_buffer,
+            'tier2': self.tier2_buffer,
+            'tier3': self.tier3_buffer,
+            'stats': self.stats,
+            'compression_ratio': self.get_compression_ratio()
+        }
+
+        with open(filename, 'w') as f:
+            json.dump(data, f)
+
+    @staticmethod
+    def _std(samples):
+        """Calculate standard deviation"""
+        if len(samples) < 2:
+            return 0
+        mean = sum(samples) / len(samples)
+        variance = sum((x - mean)**2 for x in samples) / len(samples)
+        return variance ** 0.5
+
+    @staticmethod
+    def _extract_qrs_peaks(raw_buffer):
+        """Extract QRS peak locations from buffer"""
+        # Simplified peak detection
+        peaks = []
+        threshold = max(raw_buffer) * 0.6
+
+        for i in range(1, len(raw_buffer)-1):
+            if (raw_buffer[i] > threshold and
+                raw_buffer[i] > raw_buffer[i-1] and
+                raw_buffer[i] > raw_buffer[i+1]):
+                peaks.append(i)
+
+        return peaks</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PC SOFTWARE SECTION -->
+        <div id="pc-software" class="content-section">
+            <h2>💻 PC Software</h2>
+
+            <div class="info-box success">
+                <strong>✅ Cloud Power</strong>
+                PC/Laptop ma nieograniczone zasoby - wykorzystujemy do treningu, optymalizacji i głębokiej analizy.
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>CNN Model Architecture (pc_software/src/models/cnn.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">pc_software/src/models/cnn.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># pc_software/src/models/cnn.py
+
+import tensorflow as tf
+from .base_model import BaseECGModel
+
+class CNN1D(BaseECGModel):
+    """1D Convolutional Neural Network for ECG classification
+
+    Optimized for edge deployment:
+    - Small parameter count (~300K)
+    - Suitable for INT8 quantization
+    - Good accuracy/size tradeoff
+    """
+
+    def __init__(self, input_shape=(750, 1), num_classes=5):
+        super().__init__(input_shape, num_classes)
+        self.model_name = "CNN1D"
+
+    def build(self):
+        """Build CNN architecture"""
+
+        self.model = tf.keras.Sequential([
+            # Input layer
+            tf.keras.layers.Input(shape=self.input_shape),
+
+            # Block 1: Initial feature extraction
+            tf.keras.layers.Conv1D(32, kernel_size=5,
+                                   activation='relu',
+                                   padding='same',
+                                   name='conv1'),
+            tf.keras.layers.BatchNormalization(name='bn1'),
+            tf.keras.layers.MaxPooling1D(pool_size=2, name='pool1'),
+            tf.keras.layers.Dropout(0.2, name='drop1'),
+
+            # Block 2: Deeper features
+            tf.keras.layers.Conv1D(64, kernel_size=5,
+                                   activation='relu',
+                                   padding='same',
+                                   name='conv2'),
+            tf.keras.layers.BatchNormalization(name='bn2'),
+            tf.keras.layers.MaxPooling1D(pool_size=2, name='pool2'),
+            tf.keras.layers.Dropout(0.3, name='drop2'),
+
+            # Block 3: High-level features
+            tf.keras.layers.Conv1D(128, kernel_size=3,
+                                   activation='relu',
+                                   padding='same',
+                                   name='conv3'),
+            tf.keras.layers.BatchNormalization(name='bn3'),
+            tf.keras.layers.MaxPooling1D(pool_size=2, name='pool3'),
+            tf.keras.layers.Dropout(0.3, name='drop3'),
+
+            # Block 4: Abstract representations
+            tf.keras.layers.Conv1D(128, kernel_size=3,
+                                   activation='relu',
+                                   padding='same',
+                                   name='conv4'),
+            tf.keras.layers.BatchNormalization(name='bn4'),
+            tf.keras.layers.GlobalAveragePooling1D(name='gap'),
+
+            # Classifier
+            tf.keras.layers.Dense(64, activation='relu', name='fc1'),
+            tf.keras.layers.Dropout(0.5, name='drop4'),
+            tf.keras.layers.Dense(self.num_classes,
+                                 activation='softmax',
+                                 name='output')
+        ], name=self.model_name)
+
+        # Compile
+        self.model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy',
+                    tf.keras.metrics.Precision(name='precision'),
+                    tf.keras.metrics.Recall(name='recall')]
+        )
+
+        return self.model
+
+    def preprocess(self, x):
+        """Preprocess input data
+
+        Args:
+            x: Raw ECG signal (numpy array)
+
+        Returns:
+            Preprocessed signal
+        """
+        # Z-score normalization
+        mean = x.mean(axis=-1, keepdims=True)
+        std = x.std(axis=-1, keepdims=True)
+        x_norm = (x - mean) / (std + 1e-8)
+
+        # Ensure shape
+        if len(x_norm.shape) == 1:
+            x_norm = x_norm.reshape(-1, 1)
+
+        return x_norm
+
+    def summary(self):
+        """Print model summary"""
+        self.model.summary()
+
+        # Calculate estimated size
+        params = self.model.count_params()
+        fp32_size = params * 4 / (1024 * 1024)  # MB
+        int8_size = params / (1024 * 1024)  # MB
+
+        print(f"\n{'='*50}")
+        print(f"Model: {self.model_name}")
+        print(f"Parameters: {params:,}")
+        print(f"FP32 size: {fp32_size:.2f} MB")
+        print(f"INT8 size (estimated): {int8_size:.2f} MB")
+        print(f"{'='*50}\n")</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Model Quantization (pc_software/src/optimization/quantization.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">pc_software/src/optimization/quantization.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># pc_software/src/optimization/quantization.py
+
+import tensorflow as tf
+import numpy as np
+from pathlib import Path
+
+class ModelQuantizer:
+    """Quantize Keras models to TFLite INT8 format
+
+    Reduces model size by 4x with minimal accuracy loss (<5%).
+    Essential for deployment on RP2040 with limited flash.
+    """
+
+    def __init__(self, model, representative_dataset):
+        """
+        Args:
+            model: Trained Keras model
+            representative_dataset: Dataset for calibration
+        """
+        self.model = model
+        self.representative_dataset = representative_dataset
+
+    def quantize_full_integer(self, output_path):
+        """Full integer quantization (INT8)
+
+        - Weights: INT8
+        - Activations: INT8
+        - Compatible with Cortex-M0+ (RP2040)
+
+        Args:
+            output_path: Path to save .tflite file
+        """
+        converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
+
+        # Enable optimizations
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+        # Representative dataset for calibration
+        def representative_dataset_gen():
+            for sample in self.representative_dataset.take(100):
+                yield [sample.astype(np.float32)]
+
+        converter.representative_dataset = representative_dataset_gen
+
+        # Full integer quantization
+        converter.target_spec.supported_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8
+        ]
+        converter.inference_input_type = tf.int8
+        converter.inference_output_type = tf.int8
+
+        # Convert
+        print("Converting to TFLite INT8...")
+        tflite_model = converter.convert()
+
+        # Save
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_path, 'wb') as f:
+            f.write(tflite_model)
+
+        # Report
+        original_size = self._get_keras_size(self.model)
+        quantized_size = len(tflite_model)
+        compression = original_size / quantized_size
+
+        print(f"\n{'='*50}")
+        print(f"Quantization complete!")
+        print(f"Original size: {original_size / 1024:.2f} KB")
+        print(f"Quantized size: {quantized_size / 1024:.2f} KB")
+        print(f"Compression ratio: {compression:.2f}x")
+        print(f"Saved to: {output_path}")
+        print(f"{'='*50}\n")
+
+        return tflite_model
+
+    def quantize_dynamic(self, output_path):
+        """Dynamic range quantization
+
+        - Weights: INT8
+        - Activations: FP32 (dynamic)
+        - Faster conversion, less optimal
+        """
+        converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+        tflite_model = converter.convert()
+
+        with open(output_path, 'wb') as f:
+            f.write(tflite_model)
+
+        print(f"Dynamic quantization complete: {output_path}")
+        return tflite_model
+
+    def validate_quantized_model(self, tflite_path, test_dataset):
+        """Validate quantized model accuracy
+
+        Args:
+            tflite_path: Path to .tflite file
+            test_dataset: Test dataset
+
+        Returns:
+            Dict with accuracy metrics
+        """
+        # Load TFLite model
+        interpreter = tf.lite.Interpreter(model_path=str(tflite_path))
+        interpreter.allocate_tensors()
+
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+        # Test on dataset
+        correct = 0
+        total = 0
+
+        for x, y in test_dataset:
+            # Preprocess for INT8
+            x_int8 = self._quantize_input(x, input_details)
+
+            interpreter.set_tensor(input_details[0]['index'], x_int8)
+            interpreter.invoke()
+
+            output = interpreter.get_tensor(output_details[0]['index'])
+            pred = np.argmax(output, axis=1)
+
+            correct += np.sum(pred == y.numpy())
+            total += len(y)
+
+        accuracy = correct / total
+
+        print(f"\n{'='*50}")
+        print(f"Quantized model validation")
+        print(f"Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
+        print(f"Tested on {total} samples")
+        print(f"{'='*50}\n")
+
+        return {
+            'accuracy': accuracy,
+            'total_samples': total,
+            'correct': correct
+        }
+
+    @staticmethod
+    def _get_keras_size(model):
+        """Estimate Keras model size in bytes"""
+        params = model.count_params()
+        return params * 4  # FP32 = 4 bytes per param
+
+    @staticmethod
+    def _quantize_input(x, input_details):
+        """Quantize input to INT8"""
+        input_scale, input_zero_point = input_details[0]['quantization']
+
+        if input_scale == 0:
+            # No quantization needed
+            return x.astype(np.float32)
+
+        x_int8 = x / input_scale + input_zero_point
+        x_int8 = np.clip(x_int8, -128, 127).astype(np.int8)
+        return x_int8
+
+# Example usage
+def quantize_model_example():
+    """Example: Quantize trained model"""
+
+    # Load trained model
+    model = tf.keras.models.load_model('models/ecg_cnn.h5')
+
+    # Load representative dataset
+    train_data = np.load('data/train_samples.npy')
+    representative_dataset = tf.data.Dataset.from_tensor_slices(train_data)
+
+    # Quantize
+    quantizer = ModelQuantizer(model, representative_dataset)
+    tflite_model = quantizer.quantize_full_integer('models/model_quantized.tflite')
+
+    # Validate
+    test_data = tf.data.Dataset.from_tensor_slices((
+        np.load('data/test_x.npy'),
+        np.load('data/test_y.npy')
+    )).batch(32)
+
+    results = quantizer.validate_quantized_model(
+        'models/model_quantized.tflite',
+        test_data
+    )</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>CLI Training Script (pc_software/scripts/train_model.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">pc_software/scripts/train_model.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python">#!/usr/bin/env python3
+# pc_software/scripts/train_model.py
+
+import click
+import tensorflow as tf
+from pathlib import Path
+import sys
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+from data.datasets import load_mitbih, load_ptbxl
+from models.cnn import CNN1D
+from models.lstm import LSTM1D
+from training.trainer import Trainer
+from optimization.quantization import ModelQuantizer
+from utils.logger import setup_logger
+
+logger = setup_logger('train', 'logs/training.log')
+
+@click.command()
+@click.option('--dataset',
+              type=click.Choice(['mitbih', 'ptbxl', 'both']),
+              default='mitbih',
+              help='Dataset to train on')
+@click.option('--model',
+              type=click.Choice(['cnn', 'lstm']),
+              default='cnn',
+              help='Model architecture')
+@click.option('--epochs',
+              default=100,
+              help='Number of training epochs')
+@click.option('--batch-size',
+              default=32,
+              help='Batch size')
+@click.option('--output',
+              type=click.Path(),
+              default='models/production/',
+              help='Output directory')
+@click.option('--quantize',
+              is_flag=True,
+              help='Quantize model after training')
+@click.option('--validate',
+              is_flag=True,
+              help='Validate quantized model')
+def train(dataset, model, epochs, batch_size, output, quantize, validate):
+    """Train ECG classification model
+
+    Example:
+        python train_model.py --dataset mitbih --model cnn --epochs 50 --quantize
+    """
+
+    logger.info(f"Starting training: {model} on {dataset}")
+    logger.info(f"Epochs: {epochs}, Batch size: {batch_size}")
+
+    # Load dataset
+    click.echo(f"📊 Loading {dataset} dataset...")
+    if dataset == 'mitbih':
+        train_data, val_data, test_data = load_mitbih()
+    elif dataset == 'ptbxl':
+        train_data, val_data, test_data = load_ptbxl()
+    else:
+        train_data, val_data, test_data = load_combined()
+
+    logger.info(f"Dataset loaded: {len(train_data)} train samples")
+
+    # Build model
+    click.echo(f"🏗️  Building {model.upper()} model...")
+    if model == 'cnn':
+        ecg_model = CNN1D(input_shape=(750, 1), num_classes=5)
+    elif model == 'lstm':
+        ecg_model = LSTM1D(input_shape=(750, 1), num_classes=5)
+
+    ecg_model.build()
+    ecg_model.summary()
+
+    # Train
+    click.echo(f"🚀 Training for {epochs} epochs...")
+    trainer = Trainer(ecg_model, train_data, val_data)
+
+    with click.progressbar(length=epochs, label='Training') as bar:
+        history = trainer.train(
+            epochs=epochs,
+            batch_size=batch_size,
+            progress_callback=lambda: bar.update(1)
+        )
+
+    click.echo("✅ Training complete!")
+
+    # Evaluate
+    click.echo("📈 Evaluating on test set...")
+    test_loss, test_acc = ecg_model.model.evaluate(test_data, verbose=0)
+    click.echo(f"Test accuracy: {test_acc:.4f}")
+    logger.info(f"Test accuracy: {test_acc:.4f}")
+
+    # Save model
+    output_path = Path(output)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    model_path = output_path / f"{model}_{dataset}.h5"
+    ecg_model.model.save(model_path)
+    click.echo(f"💾 Model saved: {model_path}")
+
+    # Quantize
+    if quantize:
+        click.echo("🔧 Quantizing model to INT8...")
+
+        quantizer = ModelQuantizer(ecg_model.model, train_data.take(100))
+        tflite_path = output_path / f"{model}_{dataset}_quantized.tflite"
+
+        tflite_model = quantizer.quantize_full_integer(tflite_path)
+        click.echo(f"✅ Quantized model saved: {tflite_path}")
+
+        # Validate quantized model
+        if validate:
+            click.echo("🔍 Validating quantized model...")
+            results = quantizer.validate_quantized_model(tflite_path, test_data)
+
+            accuracy_drop = test_acc - results['accuracy']
+            click.echo(f"Accuracy drop: {accuracy_drop:.4f} ({accuracy_drop*100:.2f}%)")
+
+            if accuracy_drop < 0.05:
+                click.echo("✅ Quantization successful (accuracy drop <5%)")
+            else:
+                click.echo("⚠️  Warning: Accuracy drop >5%", err=True)
+
+    click.echo("🎉 All done!")
+
+if __name__ == '__main__':
+    train()</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STORAGE STRATEGY SECTION -->
+        <div id="storage" class="content-section">
+            <h2>💾 Storage Strategy</h2>
+
+            <div class="info-box danger">
+                <strong>🔴 Critical Constraint</strong>
+                2MB Flash na RP2040 = tylko 69 minut raw data @ 250Hz. Semantic compression konieczna!
+            </div>
+
+            <h3>3-Tier Storage Architecture</h3>
+
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <!-- Input -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-block; background: #3b82f6; color: white; padding: 15px 30px; border-radius: 10px; font-weight: 600; font-size: 18px;">
+                        New ECG Segment
+                    </div>
+                    <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                    <div style="display: inline-block; background: #8b5cf6; color: white; padding: 15px 30px; border-radius: 10px; font-weight: 600;">
+                        ML Classification
+                    </div>
+                    <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                    <div style="display: inline-block; background: #f59e0b; color: white; padding: 15px 30px; border-radius: 10px; font-weight: 600; font-size: 18px;">
+                        ⚡ Decision Point: Confidence & Class
+                    </div>
+                </div>
+
+                <!-- Three Tiers -->
+                <div style="display: flex; gap: 20px; margin: 30px 0; flex-wrap: wrap;">
+                    <!-- Tier 1 -->
+                    <div style="flex: 1; min-width: 250px; text-align: center;">
+                        <div style="background: #d1fae5; padding: 15px; border-radius: 10px; border: 3px solid #10b981; margin-bottom: 15px;">
+                            <div style="font-weight: 700; font-size: 18px; color: #065f46; margin-bottom: 10px;">🟢 TIER 1</div>
+                            <div style="background: white; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: 600;">Stats Only</div>
+                            <div style="font-size: 14px; color: #065f46;">
+                                <strong>Condition:</strong><br/>
+                                Normal rhythm<br/>
+                                Confidence &gt; 95%
+                            </div>
+                        </div>
+                        <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #10b981;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">📊 Storage</div>
+                            <div style="font-size: 14px;">
+                                <strong>50 bytes/min</strong><br/>
+                                HR mean/std<br/>
+                                HRV metrics<br/>
+                                QRS count
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier 2 -->
+                    <div style="flex: 1; min-width: 250px; text-align: center;">
+                        <div style="background: #fef3c7; padding: 15px; border-radius: 10px; border: 3px solid #f59e0b; margin-bottom: 15px;">
+                            <div style="font-weight: 700; font-size: 18px; color: #92400e; margin-bottom: 10px;">🟡 TIER 2</div>
+                            <div style="background: white; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: 600;">Features</div>
+                            <div style="font-size: 14px; color: #92400e;">
+                                <strong>Condition:</strong><br/>
+                                Normal rhythm<br/>
+                                Confidence &gt; 85%
+                            </div>
+                        </div>
+                        <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #f59e0b;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">📈 Storage</div>
+                            <div style="font-size: 14px;">
+                                <strong>500 bytes/min</strong><br/>
+                                RR intervals<br/>
+                                QRS peaks<br/>
+                                Features
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier 3 -->
+                    <div style="flex: 1; min-width: 250px; text-align: center;">
+                        <div style="background: #fee2e2; padding: 15px; border-radius: 10px; border: 3px solid #ef4444; margin-bottom: 15px;">
+                            <div style="font-weight: 700; font-size: 18px; color: #991b1b; margin-bottom: 10px;">🔴 TIER 3</div>
+                            <div style="background: white; padding: 10px; border-radius: 8px; margin: 10px 0; font-weight: 600;">Raw Data</div>
+                            <div style="font-size: 14px; color: #991b1b;">
+                                <strong>Condition:</strong><br/>
+                                Anomaly detected<br/>
+                                OR Confidence &lt; 85%
+                            </div>
+                        </div>
+                        <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #ef4444;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">💾 Storage</div>
+                            <div style="font-size: 14px;">
+                                <strong>15 KB/event</strong><br/>
+                                Full raw signal<br/>
+                                Context ±30s<br/>
+                                Complete info
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash Storage -->
+                <div style="text-align: center; margin-top: 30px;">
+                    <div style="font-size: 24px; margin: 10px 0;">↓ ↓ ↓</div>
+                    <div style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 20px 40px; border-radius: 10px; border: 3px solid #3b82f6; font-weight: 700; font-size: 18px;">
+                        💾 Flash Storage (2MB)
+                    </div>
+                    <div style="font-size: 24px; margin: 10px 0;">↓</div>
+                    <div style="display: inline-block; background: #e9d5ff; color: #6b21a8; padding: 15px 30px; border-radius: 10px; border: 2px dashed #a855f7; font-weight: 600;">
+                        🔄 Ring Buffer with Priority Overwrite
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 5px;">
+                <strong>💡 Key Concept:</strong> System adaptively compresses data based on ML confidence. High confidence normal rhythms use minimal storage (Tier 1), while anomalies preserve complete raw data (Tier 3).
+            </div>
+
+            <h3>Storage Capacity Analysis</h3>
+
+            <table>
+                <tr>
+                    <th>Tier</th>
+                    <th>Compression</th>
+                    <th>Size/Unit</th>
+                    <th>Flash Allocation</th>
+                    <th>Capacity</th>
+                </tr>
+                <tr>
+                    <td>Tier 1 (Stats)</td>
+                    <td>~1000x</td>
+                    <td>50 B/min</td>
+                    <td>500 KB (33%)</td>
+                    <td>~10,000 min (7 days)</td>
+                </tr>
+                <tr>
+                    <td>Tier 2 (Features)</td>
+                    <td>~100x</td>
+                    <td>500 B/min</td>
+                    <td>400 KB (27%)</td>
+                    <td>~800 min (13 hours)</td>
+                </tr>
+                <tr>
+                    <td>Tier 3 (Raw)</td>
+                    <td>1x (no compression)</td>
+                    <td>15 KB/event</td>
+                    <td>600 KB (40%)</td>
+                    <td>~40 events</td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td><strong>1.5 MB (usable)</strong></td>
+                    <td><strong>24h holter</strong></td>
+                </tr>
+            </table>
+
+            <h3>Compression vs Accuracy Trade-off</h3>
+
+            <div class="mermaid">
+graph LR
+    A[Compression Strategy] --> B{Threshold Setting}
+
+    B -->|Conservative<br/>threshold 0.80| C[More Raw Storage<br/>Compression 10-20x<br/>FN Rate below 1%<br/>Duration 12h]
+
+    B -->|Balanced<br/>threshold 0.90| D[Mixed Storage<br/>Compression 20-30x<br/>FN Rate below 3%<br/>Duration 24h]
+
+    B -->|Aggressive<br/>threshold 0.97| E[Max Compression<br/>Compression 40-50x<br/>FN Rate 5-8%<br/>Duration 48h]
+
+    style C fill:#fee2e2
+    style D fill:#d1fae5
+    style E fill:#fef3c7
+            </div>
+
+            <h3>Ring Buffer with Priority</h3>
+
+            <div class="info-box info">
+                <strong>💡 Intelligent Overwrite</strong>
+                Gdy Flash się zapełnia, system nadpisuje najstarsze dane o najniższym priorytecie (Tier 1), chronąc krytyczne anomalie (Tier 3).
+            </div>
+
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Normal: System start
+
+    Normal --> CheckMemory: New data to store
+
+    CheckMemory --> StoreDirectly: Memory available
+    CheckMemory --> Prioritize: Memory full
+
+    Prioritize --> OverwriteTier1: Tier 3 data incoming
+    Prioritize --> OverwriteTier2: Tier 2 data incoming
+    Prioritize --> OverwriteTier1_2: Tier 1 data incoming
+
+    OverwriteTier1 --> StoreDirectly: Old Tier 1 removed
+    OverwriteTier2 --> StoreDirectly: Old Tier 2 removed
+    OverwriteTier1_2 --> StoreDirectly: Oldest stats removed
+
+    StoreDirectly --> Normal: Data stored
+
+    note right of Prioritize
+        Priority Order:
+        1. Tier 3 (Anomalies) - NEVER overwrite
+        2. Tier 2 (Features) - Protect recent
+        3. Tier 1 (Stats) - Overwrite oldest first
+    end note
+            </div>
+
+            <h3>Storage Examples</h3>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Example 1: Normal Day (90% normal rhythm)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <h4>Scenario: 24h recording, mostly normal rhythm</h4>
+
+                    <table>
+                        <tr>
+                            <th>Time Period</th>
+                            <th>Classification</th>
+                            <th>Storage Tier</th>
+                            <th>Size</th>
+                        </tr>
+                        <tr>
+                            <td>21.6 hours</td>
+                            <td>Normal (90%)</td>
+                            <td>Tier 1</td>
+                            <td>21.6h × 60min × 50B = 64.8 KB</td>
+                        </tr>
+                        <tr>
+                            <td>2.4 hours</td>
+                            <td>Anomalies (10%)</td>
+                            <td>Tier 3</td>
+                            <td>~30 events × 15KB = 450 KB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td></td>
+                            <td></td>
+                            <td><strong>~515 KB</strong> ✅ Fits in 2MB</td>
+                        </tr>
+                    </table>
+
+                    <div class="info-box success">
+                        <strong>✅ Result</strong>
+                        Compression ratio: ~65x<br/>
+                        Without compression would need: 33.6 MB<br/>
+                        Achieved: 515 KB
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Example 2: Problematic Day (30% anomalies)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <h4>Scenario: Patient with frequent arrhythmias</h4>
+
+                    <table>
+                        <tr>
+                            <th>Time Period</th>
+                            <th>Classification</th>
+                            <th>Storage Tier</th>
+                            <th>Size</th>
+                        </tr>
+                        <tr>
+                            <td>16.8 hours</td>
+                            <td>Normal (70%)</td>
+                            <td>Tier 1</td>
+                            <td>16.8h × 60min × 50B = 50.4 KB</td>
+                        </tr>
+                        <tr>
+                            <td>7.2 hours</td>
+                            <td>Anomalies (30%)</td>
+                            <td>Tier 3</td>
+                            <td>~100 events × 15KB = 1.5 MB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td></td>
+                            <td></td>
+                            <td><strong>~1.55 MB</strong> ✅ Still fits!</td>
+                        </tr>
+                    </table>
+
+                    <div class="info-box warning">
+                        <strong>⚠️ Result</strong>
+                        Compression ratio: ~18x (still good!)<br/>
+                        Memory usage: 77%<br/>
+                        Recommendation: Consider adding microSD for extended monitoring
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VALIDATION SECTION -->
+        <div id="validation" class="content-section">
+            <h2>✅ Clinical Validation</h2>
+
+            <div class="info-box danger">
+                <strong>🔴 Safety Critical</strong>
+                System medyczny musi być zwalidowany - nie może przegapić groźnych arytmii!
+            </div>
+
+            <h3>Validation Methodology</h3>
+
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <!-- Start Node -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="display: inline-block; background: #6366f1; color: white; padding: 20px 40px; border-radius: 15px; font-weight: 700; font-size: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        🔬 Validation Process
+                    </div>
+                </div>
+
+                <!-- Three Validation Paths -->
+                <div style="display: flex; gap: 25px; margin: 30px 0; flex-wrap: wrap;">
+                    <!-- Path 1: Offline Validation -->
+                    <div style="flex: 1; min-width: 280px; background: #dbeafe; padding: 20px; border-radius: 10px; border: 3px solid #3b82f6;">
+                        <h4 style="text-align: center; margin-top: 0; color: #1e40af; font-size: 18px;">📊 Offline Validation</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #3b82f6;">Load MIT-BIH / PTB-XL</div>
+                            <div style="text-align: center; font-size: 20px; color: #3b82f6;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Extract Ground Truth</div>
+                            <div style="text-align: center; font-size: 20px; color: #3b82f6;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Simulate Compression</div>
+                            <div style="text-align: center; font-size: 20px; color: #3b82f6;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Compare Results</div>
+                            <div style="text-align: center; font-size: 20px; color: #3b82f6;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">Calculate Metrics</div>
+                        </div>
+                    </div>
+
+                    <!-- Path 2: Real-world Testing -->
+                    <div style="flex: 1; min-width: 280px; background: #d1fae5; padding: 20px; border-radius: 10px; border: 3px solid #10b981;">
+                        <h4 style="text-align: center; margin-top: 0; color: #065f46; font-size: 18px;">🔬 Real-world Testing</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #10b981;">Record Dual Stream</div>
+                            <div style="text-align: center; font-size: 20px; color: #10b981;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Full Data</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; margin-top: -10px;">Compressed Data</div>
+                            <div style="text-align: center; font-size: 20px; color: #10b981;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Compare Completeness</div>
+                            <div style="text-align: center; font-size: 20px; color: #10b981;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">Statistical Analysis</div>
+                        </div>
+                    </div>
+
+                    <!-- Path 3: Clinical Assessment -->
+                    <div style="flex: 1; min-width: 280px; background: #fef3c7; padding: 20px; border-radius: 10px; border: 3px solid #f59e0b;">
+                        <h4 style="text-align: center; margin-top: 0; color: #92400e; font-size: 18px;">🏥 Clinical Assessment</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; border: 2px solid #f59e0b;">Doctor Review</div>
+                            <div style="text-align: center; font-size: 20px; color: #f59e0b;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center;">Blinded Assessment</div>
+                            <div style="text-align: center; font-size: 20px; color: #f59e0b;">↓</div>
+                            <div style="background: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;">Diagnostic Agreement</div>
+                            <div style="background: #fff7ed; padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-style: italic; font-size: 14px; border: 2px dashed #f59e0b;">
+                                Can compressed data support accurate diagnosis?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Report -->
+                <div style="text-align: center; margin-top: 30px;">
+                    <div style="font-size: 24px; margin: 10px 0; color: #6366f1;">↓ ↓ ↓</div>
+                    <div style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 20px 50px; border-radius: 12px; border: 3px solid #ef4444; font-weight: 700; font-size: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        📋 Validation Report
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 5px;">
+                <strong>🎯 Goal:</strong> Comprehensive validation through three independent methods ensures system safety and clinical reliability. All paths must converge on the same conclusion: compression does not compromise diagnostic capability.
+            </div>
+
+            <h3>Key Validation Metrics</h3>
+
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Definition</th>
+                    <th>Target</th>
+                    <th>Critical Threshold</th>
+                </tr>
+                <tr>
+                    <td><strong>Sensitivity (Recall)</strong></td>
+                    <td>TP / (TP + FN)<br/>% wykrytych prawdziwych arytmii</td>
+                    <td>>95%</td>
+                    <td>>90% (must have)</td>
+                </tr>
+                <tr>
+                    <td><strong>Specificity</strong></td>
+                    <td>TN / (TN + FP)<br/>% poprawnie sklasyfikowanych normalnych</td>
+                    <td>>70%</td>
+                    <td>>60% (acceptable)</td>
+                </tr>
+                <tr>
+                    <td><strong>False Negative Rate</strong></td>
+                    <td>FN / (TP + FN)<br/>% przegapionych arytmii</td>
+                    <td><5%</td>
+                    <td><10% (maximum)</td>
+                </tr>
+                <tr>
+                    <td><strong>Positive Predictive Value</strong></td>
+                    <td>TP / (TP + FP)<br/>Jak często alarm jest prawdziwy</td>
+                    <td>>80%</td>
+                    <td>>60%</td>
+                </tr>
+                <tr>
+                    <td><strong>F1 Score</strong></td>
+                    <td>2 × (Precision × Recall) / (Precision + Recall)</td>
+                    <td>>0.90</td>
+                    <td>>0.85</td>
+                </tr>
+            </table>
+
+            <h3>Per-Class Validation Requirements</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>🔴 Critical Arrhythmias</h4>
+                    <p><strong>Classes:</strong> AF, VT, VF</p>
+                    <p><strong>Sensitivity required:</strong> >95%</p>
+                    <p><strong>Rationale:</strong> Life-threatening - cannot miss!</p>
+                </div>
+                <div class="card">
+                    <h4>🟡 Important Arrhythmias</h4>
+                    <p><strong>Classes:</strong> PVC, PAC, SVT</p>
+                    <p><strong>Sensitivity required:</strong> >90%</p>
+                    <p><strong>Rationale:</strong> Clinically significant</p>
+                </div>
+                <div class="card">
+                    <h4>🟢 Benign Conditions</h4>
+                    <p><strong>Classes:</strong> Bradycardia, Tachycardia</p>
+                    <p><strong>Sensitivity required:</strong> >85%</p>
+                    <p><strong>Rationale:</strong> Important but not emergent</p>
+                </div>
+                <div class="card">
+                    <h4>⚪ Normal Rhythm</h4>
+                    <p><strong>Specificity required:</strong> >70%</p>
+                    <p><strong>Rationale:</strong> False alarms OK, better safe than sorry</p>
+                </div>
+            </div>
+
+            <h3>Validation Pipeline</h3>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Phase 1: Offline Dataset Validation (pc_software/src/evaluation/validator.py)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="filename">pc_software/src/evaluation/validator.py</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># pc_software/src/evaluation/validator.py
+
+import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+class ClinicalValidator:
+    """Validate compression system for clinical safety"""
+
+    def __init__(self, model, compression_system):
+        self.model = model
+        self.compression = compression_system
+        self.results = {}
+
+    def validate_on_dataset(self, dataset, annotations):
+        """Validate compression on annotated dataset
+
+        Args:
+            dataset: ECG signals
+            annotations: Ground truth labels
+
+        Returns:
+            Dict with validation results
+        """
+        print("Running clinical validation...")
+
+        true_labels = []
+        predicted_labels = []
+        compressed_stored = []  # What would be stored
+
+        for signal, true_label in zip(dataset, annotations):
+            # Model prediction
+            pred_class, confidence = self.model.predict(signal)
+
+            # Compression decision
+            tier = self.compression.decide_storage_tier(
+                pred_class, confidence, {}
+            )
+
+            # Track results
+            true_labels.append(true_label)
+            predicted_labels.append(pred_class)
+
+            # What gets stored?
+            if tier == 3:  # Raw data
+                compressed_stored.append(true_label)  # Full info preserved
+            elif tier == 2:  # Features
+                compressed_stored.append(pred_class)  # Rely on prediction
+            else:  # Stats only
+                compressed_stored.append(pred_class if pred_class != 0 else -1)
+
+        # Calculate metrics
+        results = self._calculate_metrics(
+            true_labels,
+            predicted_labels,
+            compressed_stored
+        )
+
+        self.results = results
+        return results
+
+    def _calculate_metrics(self, y_true, y_pred, y_stored):
+        """Calculate clinical metrics"""
+
+        # Per-class metrics
+        from sklearn.metrics import precision_recall_fscore_support
+
+        precision, recall, f1, support = precision_recall_fscore_support(
+            y_true, y_pred, average=None
+        )
+
+        # Overall metrics
+        cm = confusion_matrix(y_true, y_pred)
+
+        # False negative analysis (CRITICAL!)
+        false_negatives = {}
+        for i in range(len(cm)):
+            fn = np.sum(cm[i, :]) - cm[i, i]
+            false_negatives[i] = {
+                'count': fn,
+                'rate': fn / np.sum(cm[i, :]) if np.sum(cm[i, :]) > 0 else 0
+            }
+
+        # Compression impact
+        compression_loss = sum(1 for t, s in zip(y_true, y_stored)
+                              if t != 0 and s != t)
+        compression_loss_rate = compression_loss / sum(1 for t in y_true if t != 0)
+
+        return {
+            'precision_per_class': precision,
+            'recall_per_class': recall,
+            'f1_per_class': f1,
+            'support_per_class': support,
+            'confusion_matrix': cm,
+            'false_negatives': false_negatives,
+            'compression_loss': compression_loss,
+            'compression_loss_rate': compression_loss_rate
+        }
+
+    def generate_report(self, output_path='validation_report.pdf'):
+        """Generate comprehensive validation report"""
+
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+
+        # 1. Confusion Matrix
+        sns.heatmap(self.results['confusion_matrix'],
+                   annot=True, fmt='d', ax=axes[0, 0])
+        axes[0, 0].set_title('Confusion Matrix')
+        axes[0, 0].set_xlabel('Predicted')
+        axes[0, 0].set_ylabel('True')
+
+        # 2. Per-class metrics
+        classes = ['Normal', 'AF', 'PVC', 'Brady', 'Tachy']
+        x = np.arange(len(classes))
+        width = 0.25
+
+        axes[0, 1].bar(x - width, self.results['precision_per_class'],
+                      width, label='Precision')
+        axes[0, 1].bar(x, self.results['recall_per_class'],
+                      width, label='Recall')
+        axes[0, 1].bar(x + width, self.results['f1_per_class'],
+                      width, label='F1')
+        axes[0, 1].set_xlabel('Class')
+        axes[0, 1].set_ylabel('Score')
+        axes[0, 1].set_title('Per-Class Performance')
+        axes[0, 1].set_xticks(x)
+        axes[0, 1].set_xticklabels(classes)
+        axes[0, 1].legend()
+        axes[0, 1].axhline(y=0.90, color='r', linestyle='--',
+                          label='Target')
+
+        # 3. False Negative Rate
+        fn_rates = [self.results['false_negatives'][i]['rate']
+                   for i in range(len(classes))]
+        axes[1, 0].bar(classes, fn_rates)
+        axes[1, 0].set_ylabel('False Negative Rate')
+        axes[1, 0].set_title('Critical: False Negatives by Class')
+        axes[1, 0].axhline(y=0.05, color='r', linestyle='--',
+                          label='Max acceptable (5%)')
+        axes[1, 0].legend()
+
+        # 4. Summary text
+        summary = f"""
+        VALIDATION SUMMARY
+        ==================
+
+        Overall Accuracy: {np.trace(self.results['confusion_matrix']) / np.sum(self.results['confusion_matrix']):.3f}
+
+        Sensitivity (Recall):
+        - Normal: {self.results['recall_per_class'][0]:.3f}
+        - AF: {self.results['recall_per_class'][1]:.3f} {'✓' if self.results['recall_per_class'][1] > 0.95 else '✗'}
+        - PVC: {self.results['recall_per_class'][2]:.3f} {'✓' if self.results['recall_per_class'][2] > 0.90 else '✗'}
+
+        False Negative Rate:
+        - AF: {fn_rates[1]:.3f} {'✓' if fn_rates[1] < 0.05 else '✗ FAIL'}
+        - PVC: {fn_rates[2]:.3f} {'✓' if fn_rates[2] < 0.05 else '✗'}
+
+        Compression Impact:
+        - Loss rate: {self.results['compression_loss_rate']:.3f}
+        - Anomalies missed: {self.results['compression_loss']}
+
+        {'✓ SYSTEM VALIDATED' if self._is_validated() else '✗ VALIDATION FAILED'}
+        """
+
+        axes[1, 1].text(0.1, 0.5, summary, fontsize=10,
+                       family='monospace', verticalalignment='center')
+        axes[1, 1].axis('off')
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300)
+        print(f"Report saved: {output_path}")
+
+    def _is_validated(self):
+        """Check if system meets validation criteria"""
+        # Critical: Recall for AF >95%
+        if self.results['recall_per_class'][1] < 0.95:
+            return False
+
+        # Critical: False negative rate <5% for AF
+        if self.results['false_negatives'][1]['rate'] > 0.05:
+            return False
+
+        # Important: Overall F1 >0.85
+        if np.mean(self.results['f1_per_class'][1:]) < 0.85:
+            return False
+
+        return True</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box success">
+                <strong>✅ Validation Success Criteria</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Sensitivity dla AF/VT/VF: >95%</li>
+                    <li>False Negative Rate dla krytycznych arytmii: <5%</li>
+                    <li>Overall F1 score: >0.85</li>
+                    <li>Compression loss rate: <3%</li>
+                    <li>No life-threatening arrhythmias missed in test set</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>ECG Edge AI System Architecture</strong></p>
+            <p>Łukasz Guziczak | Uniwersytet WSB Merito Wrocław | 2025</p>
+            <p>Interactive documentation generated: <span id="timestamp"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // Highlight.js
+        hljs.highlightAll();
+
+        // Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            // Activate clicked tab
+            event.target.classList.add('active');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Collapsible sections
+        function toggleCollapsible(header) {
+            const collapsible = header.parentElement;
+            collapsible.classList.toggle('open');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('code').textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Set timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('pl-PL');
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

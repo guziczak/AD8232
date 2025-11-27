@@ -1,0 +1,506 @@
+================================================================================
+  ECG EDGE AI - SYSTEM ARCHITECTURE OVERVIEW
+================================================================================
+
+Author:   Łukasz Guziczak
+Hardware: RP2040-Zero + AD8232 ECG Module
+Cost:     ~45 PLN
+Concept:  AI-driven Semantic Compression for 24h ECG Holter Monitoring
+
+================================================================================
+  CORE CONCEPT
+================================================================================
+
+SEMANTIC COMPRESSION CONTROLLED BY AI:
+
+  Normal rhythm + high confidence (>95%)  →  Save only statistics (50B/min)
+  Normal rhythm + medium confidence       →  Save features (500B/min)
+  Anomaly OR low confidence (<85%)        →  Save full raw data (15KB/event)
+
+RESULT: 20-50x compression ratio, 24h recording fits in 2MB Flash
+
+================================================================================
+  SYSTEM ARCHITECTURE (3 LAYERS)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1: EDGE (RP2040)                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  AD8232 Sensor                                                              │
+│       ↓                                                                     │
+│  ADC Sampling @ 250 Hz                                                      │
+│       ↓                                                                     │
+│  Digital Filtering (bandpass 0.5-40Hz, notch 50Hz)                         │
+│       ↓                                                                     │
+│  Pan-Tompkins QRS Detection                                                │
+│       ↓                                                                     │
+│  Feature Extraction (RR intervals, HRV metrics)                            │
+│       ↓                                                                     │
+│  TinyML Classifier (TFLite INT8, <500KB)                                   │
+│       ↓                                                                     │
+│  Compression Decision                                                       │
+│       ↓                     ↓                                               │
+│  Flash Storage (2MB)    UART Stream → PC                                   │
+│                                                                             │
+│  DUAL CORE:                                                                 │
+│    Core 0: Real-time (sampling, QRS, UART)                                 │
+│    Core 1: Background (TinyML, storage)                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 2: CLOUD (PC)                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Serial Reader (UART 115200 baud)                                          │
+│       ↓                                                                     │
+│  Protocol Decoder (binary packets)                                         │
+│       ↓                                                                     │
+│  Live Visualization (Matplotlib/PyQt)                                      │
+│       ↓                                                                     │
+│  Long-term Storage (CSV/HDF5)                                              │
+│                                                                             │
+│  TRAINING PIPELINE:                                                         │
+│    MIT-BIH/PTB-XL → Preprocessing → CNN Training → Quantization (INT8)     │
+│       → Validation → Deploy to RP2040                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 3: STORAGE (3-TIER COMPRESSION)                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  TIER 1: Statistics Only (50 B/min, ~1000x compression)                    │
+│    Condition: Normal + confidence >95%                                     │
+│    Stores:    HR mean/std, HRV, QRS count                                  │
+│    Flash:     500 KB → ~7 days capacity                                    │
+│                                                                             │
+│  TIER 2: Features (500 B/min, ~100x compression)                           │
+│    Condition: Normal + confidence >85%                                     │
+│    Stores:    RR intervals, QRS peaks, features                            │
+│    Flash:     400 KB → ~13 hours capacity                                  │
+│                                                                             │
+│  TIER 3: Raw Data (15 KB/event, no compression)                            │
+│    Condition: Anomaly OR confidence <85%                                   │
+│    Stores:    Full raw signal ±30s context                                 │
+│    Flash:     600 KB → ~40 events                                          │
+│                                                                             │
+│  RING BUFFER PRIORITY:                                                     │
+│    Tier 3 (anomalies)  → NEVER overwrite                                   │
+│    Tier 2 (features)   → Protect recent                                    │
+│    Tier 1 (stats)      → Overwrite oldest first                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+  HARDWARE SPECIFICATIONS
+================================================================================
+
+RP2040-Zero:
+  CPU:   Dual Cortex-M0+ @ 133MHz
+  RAM:   264 KB
+  Flash: 2 MB
+  ADC:   12-bit (oversampled to 16-bit)
+
+AD8232:
+  Type:   Analog front-end for ECG
+  Filter: 0.5-40 Hz
+  Output: Analog voltage
+
+Electrodes: 3x snap electrodes (RA, LA, RL)
+
+Total Cost: ~45 PLN
+
+================================================================================
+  MEMORY BUDGET (RP2040)
+================================================================================
+
+RAM (264 KB):
+  Sample buffer:      30 KB
+  Model activations:  80 KB
+  Variables:          20 KB
+  Stack:              30 KB
+  Free:              ~100 KB
+
+Flash (2 MB):
+  Firmware:          200 KB
+  TFLite Model:      400 KB
+  Data Storage:      1.4 MB
+    ├─ Tier 1:       500 KB (33%)
+    ├─ Tier 2:       400 KB (27%)
+    └─ Tier 3:       600 KB (40%)
+
+================================================================================
+  KEY ALGORITHMS
+================================================================================
+
+PAN-TOMPKINS QRS DETECTION (IEEE Trans BME 1985):
+
+  1. Derivative filter:  y[n] = (2x[n] + x[n-1] - x[n-3] - 2x[n-4]) / 8
+  2. Squaring:           x²
+  3. Moving Window Integration (150ms window)
+  4. Adaptive thresholding (learning rate 0.125)
+  5. RR interval tracking → Heart Rate + HRV (RMSSD, SDNN)
+
+CNN MODEL (TensorFlow → TFLite):
+
+  Input: (750, 1) = 3 seconds @ 250Hz
+
+  Conv1D(32, k=5) + BN + MaxPool(2) + Dropout(0.2)
+  Conv1D(64, k=5) + BN + MaxPool(2) + Dropout(0.3)
+  Conv1D(128, k=3) + BN + MaxPool(2) + Dropout(0.3)
+  Conv1D(128, k=3) + BN + GlobalAvgPool
+  Dense(64) + Dropout(0.5)
+  Dense(5, softmax)
+
+  Output: [Normal, Atrial Fibrillation, PVC, Bradycardia, Tachycardia]
+  Params: ~300K → INT8 quantized: ~300KB
+
+QUANTIZATION (FP32 → INT8):
+
+  - 4x size reduction
+  - <5% accuracy drop
+  - INT8 ops compatible with Cortex-M0+
+  - Calibration: 100 representative samples
+
+================================================================================
+  COMMUNICATION PROTOCOL (UART)
+================================================================================
+
+Baud Rate: 115200
+Format:    Binary packets
+
+MESSAGE STRUCTURE:
+┌──────────┬──────────┬──────────┬──────────────┬──────────┐
+│ Header   │ Type     │ Length   │ Payload      │ Checksum │
+│ 2 bytes  │ 1 byte   │ 2 bytes  │ N bytes      │ 1 byte   │
+│ 0xEC60   │ 0x01-FF  │ size     │ variable     │ sum&0xFF │
+└──────────┴──────────┴──────────┴──────────────┴──────────┘
+Total: 6 bytes + Payload
+
+MESSAGE TYPES & PAYLOAD STRUCTURES:
+
+0x01 - RAW_SAMPLE (6 bytes payload)
+  [timestamp(4 bytes), adc_value(2 bytes)]
+  Purpose: Stream individual ADC samples for live visualization
+
+0x02 - QRS_DETECTED (8 bytes payload)
+  [timestamp(4), rr_interval(2), amplitude(2)]
+  Purpose: Report each detected heartbeat with timing and strength
+
+0x03 - FEATURES (10 bytes payload)
+  [timestamp(4), hr(2), hrv_rmssd(2), hrv_sdnn(2)]
+  Purpose: Send extracted heart rate and HRV metrics
+
+0x04 - CLASSIFICATION (6 bytes payload)
+  [timestamp(4), class_id(1), confidence(1)]
+  Purpose: ML classification result (0-4 for 5 classes, confidence 0-100)
+
+0x05 - COMPRESSED (12 bytes payload)
+  [start_time(4), duration(2), hr_mean(2), hr_std(2), hrv_rmssd(2), hrv_sdnn(2)]
+  Purpose: Tier 1 compressed statistics for normal rhythm periods
+
+0x06 - ANOMALY_EVENT (6+ bytes payload)
+  [timestamp(4), class_id(1), confidence(1), raw_samples(variable)]
+  Purpose: Full raw ECG segment with context for detected anomalies
+
+0x10 - HEARTBEAT (5 bytes payload)
+  [timestamp(4), status(1)]
+  Purpose: Keepalive message every 5 seconds
+
+0x11 - ERROR (1+ bytes payload)
+  [error_code(1), message(variable string)]
+  Purpose: Error reporting from firmware
+
+PROTOCOL FLOW:
+
+Initialization:
+  RP2040 → PC: HEARTBEAT (system ready)
+  PC → RP2040: ACK (optional)
+
+Normal Operation (every heartbeat):
+  RP2040 → PC: QRS_DETECTED (timing info)
+  RP2040 → PC: FEATURES (HR, HRV)
+
+Anomaly Detection:
+  RP2040 → PC: CLASSIFICATION (ML result)
+  RP2040 → PC: ANOMALY_EVENT (full raw data)
+
+Periodic Updates (every minute):
+  RP2040 → PC: COMPRESSED (statistics summary)
+
+Error Handling:
+  RP2040 → PC: ERROR (error code + message)
+
+ENCODER (Firmware - RP2040):
+  Module: firmware/src/communication/protocol.py
+
+  Implements functions to serialize data to binary protocol:
+  - send_qrs_detected()     → Packs QRS timing data using struct.pack
+  - send_features()         → Serializes HR and HRV metrics
+  - send_classification()   → Sends ML result with confidence score
+  - send_anomaly_event()    → Packages raw ECG buffer with metadata
+  - send_compressed()       → Sends statistical summary for normal periods
+  - send_heartbeat()        → Periodic keepalive with system status
+  - send_error()            → Error reporting with code + message
+  - _send_message()         → Internal: adds header, length, checksum
+  - _calculate_checksum()   → Simple sum & 0xFF for error detection
+
+DECODER (PC Software):
+  Module: pc_software/src/real_time/protocol_decoder.py
+
+  Implements streaming parser for incoming binary data:
+  - feed()                  → Accepts raw bytes, yields complete messages
+  - _decode_message()       → Unpacks binary payload based on message type
+  - _get_class_name()       → Maps class_id (0-4) to human names
+  - get_stats()             → Returns decoder statistics (errors, messages)
+
+  Error Handling:
+  - Header sync: Searches for 0xEC60 magic number
+  - Checksum verification: Validates data integrity
+  - Buffer management: Handles partial messages, resync on errors
+  - Statistics tracking: Counts sync errors, checksum errors
+
+================================================================================
+  VALIDATION METRICS
+================================================================================
+
+TARGETS:
+  Sensitivity (Recall):   >95% for AF/VT/VF (critical arrhythmias)
+  False Negative Rate:    <5% (cannot miss dangerous rhythms!)
+  Specificity:            >70% (false alarms acceptable)
+  F1 Score:               >0.90
+  Compression Loss Rate:  <3%
+
+PER-CLASS REQUIREMENTS:
+  Critical (AF, VT, VF):  Sensitivity >95%
+  Important (PVC, PAC):   Sensitivity >90%
+  Benign (Brady, Tachy):  Sensitivity >85%
+  Normal:                 Specificity >70%
+
+VALIDATION METHODS:
+  1. Offline:     MIT-BIH/PTB-XL datasets, simulate compression
+  2. Real-world:  Dual stream (full + compressed), compare completeness
+  3. Clinical:    Blinded doctor assessment, diagnostic agreement
+
+================================================================================
+  OPERATIONAL MODES
+================================================================================
+
+MODE 1: TRAINING (PC)
+  Load datasets → Train model → Quantize INT8 → Validate
+
+MODE 2: DEPLOYMENT (PC → RP2040)
+  Package model.tflite → Upload via USB → Store in Flash
+
+MODE 3: REAL-TIME (RP2040 + PC)
+  Edge: Sampling, QRS, classification
+  UART: Stream to PC
+  PC:   Live visualization, long-term storage
+
+MODE 4: STANDALONE HOLTER (RP2040 only)
+  Autonomous 24h recording → Flash storage → Download later via USB
+
+================================================================================
+  EXAMPLE SCENARIOS
+================================================================================
+
+SCENARIO 1: NORMAL DAY (90% normal rhythm)
+
+  21.6 hours normal    →  Tier 1  →  64.8 KB
+   2.4 hours anomalies →  Tier 3  →  450 KB
+  ─────────────────────────────────────────
+  Total: 515 KB (65x compression)
+  Without compression would need: 33.6 MB
+
+SCENARIO 2: PROBLEMATIC DAY (30% anomalies)
+
+  16.8 hours normal    →  Tier 1  →  50.4 KB
+   7.2 hours anomalies →  Tier 3  →  1.5 MB
+  ─────────────────────────────────────────
+  Total: 1.55 MB (18x compression)
+  Flash usage: 77%
+
+================================================================================
+  PROJECT STRUCTURE
+================================================================================
+
+ecg-edge-ai/
+│
+├── firmware/                      # RP2040 (MicroPython)
+│   ├── src/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── acquisition/           # AD8232 driver, sampling
+│   │   ├── processing/            # Filters, Pan-Tompkins, features
+│   │   ├── ml/                    # TFLite inference
+│   │   ├── storage/               # 3-tier compression, Flash
+│   │   └── communication/         # UART protocol
+│   └── models/
+│       └── model_quantized.tflite
+│
+├── pc_software/                   # PC (Python)
+│   ├── src/
+│   │   ├── data/                  # Dataset loaders, preprocessing
+│   │   ├── models/                # CNN/LSTM architectures
+│   │   ├── training/              # Training loop
+│   │   ├── optimization/          # Quantization, TFLite conversion
+│   │   ├── evaluation/            # Metrics, validation
+│   │   ├── real_time/             # Serial reader, live dashboard
+│   │   └── deployment/            # Upload to RP2040
+│   ├── notebooks/                 # Jupyter notebooks
+│   └── scripts/                   # CLI tools
+│       ├── train_model.py
+│       ├── deploy_to_device.py
+│       └── run_dashboard.py
+│
+├── data/                          # Datasets (gitignored)
+│   ├── raw/mitbih/
+│   └── raw/ptb-xl/
+│
+└── models/                        # Trained models
+    └── production/
+
+================================================================================
+  CLI COMMANDS
+================================================================================
+
+# Train model
+python pc_software/scripts/train_model.py \
+  --dataset mitbih --model cnn --epochs 100 --quantize --validate
+
+# Deploy to device
+python pc_software/scripts/deploy_to_device.py \
+  --model models/production/cnn_mitbih_quantized.tflite \
+  --port /dev/ttyACM0
+
+# Run live dashboard
+python pc_software/scripts/run_dashboard.py \
+  --port /dev/ttyACM0 --baudrate 115200
+
+================================================================================
+  CONFIGURATION PARAMETERS
+================================================================================
+
+Module: firmware/src/config.py
+
+HARDWARE PINS (RP2040):
+  ADC_PIN:        GPIO 29 (ADC3)
+  LO_PLUS_PIN:    GPIO 27 (lead-off detection +)
+  LO_MINUS_PIN:   GPIO 28 (lead-off detection -)
+  UART_TX_PIN:    GPIO 0
+  UART_RX_PIN:    GPIO 1
+
+SAMPLING CONFIGURATION:
+  SAMPLE_RATE:    250 Hz
+  BUFFER_SIZE:    750 samples (3 seconds @ 250Hz)
+  ADC_RESOLUTION: 65536 (16-bit)
+  ADC_VREF:       3.3 V
+
+SIGNAL PROCESSING:
+  FILTER_LOWCUT:  0.5 Hz (highpass cutoff)
+  FILTER_HIGHCUT: 40 Hz (lowpass cutoff)
+  NOTCH_FREQ:     50 Hz (EU) or 60 Hz (US)
+  NOTCH_Q:        30 (quality factor)
+
+QRS DETECTION (Pan-Tompkins):
+  QRS_THRESHOLD:      0.6 (adaptive threshold multiplier)
+  QRS_MIN_DISTANCE:   150 ms (prevents double detection, max 400 BPM)
+  QRS_WINDOW:         25 samples (peak detection window)
+
+FEATURE EXTRACTION:
+  HRV_WINDOW:         300 beats (for HRV calculation)
+  FEATURE_UPDATE_RATE: 1 Hz (send features every second)
+
+MACHINE LEARNING:
+  MODEL_PATH:         '/models/model_quantized.tflite'
+  INFERENCE_WINDOW:   750 samples (3 seconds)
+  CONFIDENCE_THRESHOLD: 0.90 (general classification threshold)
+
+STORAGE TIER THRESHOLDS:
+  TIER1_THRESHOLD:  0.95 (high confidence normal → stats only)
+  TIER2_THRESHOLD:  0.85 (medium confidence → features)
+  Below TIER2:      Save raw data (anomaly or low confidence)
+
+FLASH ALLOCATION:
+  FLASH_SIZE:         2,000,000 bytes (2 MB total)
+  FLASH_RESERVE:      500,000 bytes (firmware + model)
+  FLASH_DATA_SIZE:    1,500,000 bytes (available for data)
+    ├─ TIER1_SIZE:    500,000 bytes (33% - statistics)
+    ├─ TIER2_SIZE:    400,000 bytes (27% - features)
+    └─ TIER3_SIZE:    600,000 bytes (40% - raw anomalies)
+
+COMMUNICATION:
+  UART_BAUDRATE:      115200
+  UART_TIMEOUT:       100 ms
+  HEARTBEAT_INTERVAL: 5000 ms (keepalive every 5 seconds)
+
+CLASSIFICATION CLASSES:
+  0: Normal
+  1: Atrial Fibrillation (AF)
+  2: Premature Ventricular Contraction (PVC)
+  3: Bradycardia
+  4: Tachycardia
+
+CLINICAL THRESHOLDS:
+  HR_BRADYCARDIA:  60 BPM (below = bradycardia)
+  HR_TACHYCARDIA:  100 BPM (above = tachycardia)
+  HR_MIN:          30 BPM (absolute minimum valid)
+  HR_MAX:          250 BPM (absolute maximum valid)
+
+================================================================================
+  PERFORMANCE TARGETS
+================================================================================
+
+✓ Accuracy:           >90% on MIT-BIH dataset
+✓ Sensitivity:        >95% for critical arrhythmias (AF, VT, VF)
+✓ Latency:            <100ms for edge classification
+✓ Model Size:         <500KB (INT8 quantized)
+✓ Storage Capacity:   24h recording in 2MB Flash
+✓ False Negatives:    <5% rate
+✓ Compression Ratio:  20-50x (depends on arrhythmia frequency)
+
+================================================================================
+  LIMITATIONS & SAFETY
+================================================================================
+
+⚠️  THIS IS NOT A CERTIFIED MEDICAL DEVICE!
+
+Educational/research project only. Clinical deployment requires:
+  - FDA/CE certification
+  - ISO 13485 compliance
+  - IEC 60601-2-47 ambulatory ECG standard
+  - Clinical trials and regulatory approval
+
+Technical Limitations:
+  - No galvanic isolation (safety concern)
+  - Single-lead ECG (commercial: 12-lead)
+  - Limited Flash storage (2MB vs SD card GB)
+  - Only 5 arrhythmia classes (simplified)
+
+================================================================================
+  REFERENCES
+================================================================================
+
+Papers:
+  - Pan & Tompkins (1985), "A Real-Time QRS Detection Algorithm"
+  - Rajpurkar et al. (2017), "Cardiologist-Level Arrhythmia Detection"
+  - Hannun et al. (2019), "Cardiologist-level arrhythmia detection"
+
+Datasets:
+  - MIT-BIH Arrhythmia Database: https://physionet.org/content/mitdb/
+  - PTB-XL: https://physionet.org/content/ptb-xl/
+
+Tools:
+  - TensorFlow Lite: https://www.tensorflow.org/lite
+  - MicroPython: https://micropython.org
+  - WFDB Python: https://github.com/MIT-LCP/wfdb-python
+
+================================================================================
+
+Version: 1.0
+Date:    2025-11-11
+License: MIT (educational use only)
+
+================================================================================
